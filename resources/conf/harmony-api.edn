@@ -1,0 +1,3 @@
+{:web-server
+ {:port #config/prop ["PORT" 8085]
+  :ip #config/prop ["IP" "127.0.0.1"]}}
