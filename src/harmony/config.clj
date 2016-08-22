@@ -7,7 +7,7 @@
 
 (schema/defschema WebServer
   {:port schema/Int
-   :ip schema/Str})
+   :dev-mode? schema/Bool})
 
 (schema/defschema HarmonyAPI
   {:web-server WebServer})

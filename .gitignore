@@ -1,6 +1,8 @@
 /target
 /classes
 /checkouts
+/logs
+/resources/logback-test.xml
 pom.xml
 pom.xml.asc
 *.jar

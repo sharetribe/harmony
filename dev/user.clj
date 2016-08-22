@@ -1,21 +1,20 @@
 (ns user
   (:require [reloaded.repl :refer [system init start stop go clear]]
 
-            #_[search.util.log :as log]
-            #_[search.config :as config]
+            [harmony.util.log :as log]
+            [harmony.config :as config]
             [harmony.system :as system]))
 
 (Thread/setDefaultUncaughtExceptionHandler
  (reify Thread$UncaughtExceptionHandler
    (uncaughtException [_ thread ex]
-     (println ex)
-     #_(log/error :user
+     (log/error :user
                 :error
                 {:exception ex
                  :thread    (.getName thread)}))))
 
 
-(reloaded.repl/set-init! #(system/harmony-api))
+(reloaded.repl/set-init! #(system/harmony-api (config/config-harmony-api :dev)))
 
 (defn reset []
   (reloaded.repl/reset))

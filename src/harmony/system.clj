@@ -1,16 +1,14 @@
 (ns harmony.system
-  (:require [com.stuartsierra.component :as component]))
+  (:require [com.stuartsierra.component :as component]
 
-(defn- new-foo []
-  (reify component/Lifecycle
-    (start [this]
-      (println "Foo started")
-      this)
-    (stop [this]
-      (println "Foo stopped")
-      this)))
+            [harmony.config :as config]
+            [harmony.service.web-server :as service.web-server]
+            [harmony.api.bookings :as api.bookings]))
 
-(defn harmony-api []
+(defn harmony-api [config]
   (component/system-map
-   :foo (new-foo)))
+   :bookings-api (api.bookings/new-bookings-api {})
+   :web-server (component/using
+                (service.web-server/new-web-server (config/web-server-conf config))
+                {:routes :bookings-api})))
 
