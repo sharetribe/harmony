@@ -4,9 +4,7 @@
             [io.pedestal.http :as server]
             [io.pedestal.interceptor :as interceptor]
             [harmony.util.log :as log]
-            ;; [search.service.web.logging :refer [with-logging-interceptor]]
-            ;; [search.errors :refer [report-request-error]]
-            ))
+            [harmony.service.web.logging :refer [with-logging-interceptor]]))
 
 (defprotocol IRoutes
   "Protocol for components providing routes configuration to
@@ -24,7 +22,6 @@
 
 (defn- add-dev-interceptors [service]
   (-> service
-      #_with-exception-interceptor
       server/dev-interceptors))
 
 (defrecord WebServer [config routes server]
@@ -45,10 +42,7 @@
                           dev-mode? (merge dev-settings)
                           true server/default-interceptors
                           dev-mode? add-dev-interceptors
-                          ;; true (with-logging-interceptor)
-                          ;; true (with-report-ex-interceptor
-                          ;;        errors-client)
-                          )
+                          true (with-logging-interceptor))
             server (-> service-map
                        (server/create-server)
                        server/start)]
