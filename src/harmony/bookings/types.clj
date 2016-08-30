@@ -18,7 +18,8 @@
     {:activePlan Plan
      :plans [Plan]
      :bookings [Booking]
-     :exceptions [(s/cond-pre Allow Block)]}}))
+     :allows [Allow]
+     :blocks [Block]}}))
 
 ;; (defapiresource Bookable :bookable
 ;;   {:marketplaceId s/Uuid
@@ -28,7 +29,8 @@
 ;;   {:activePlan Plan
 ;;    :plans [Plan]
 ;;    :bookings [Booking]
-;;    :exceptions [(s/cond-pre Allow Block)]})
+;;    :allows [Allow]
+;;    :blocks [Block]})
 
 
 (def Plan
@@ -37,6 +39,7 @@
     :attrs
     {:seats s/Int
      :planMode (s/enum :available :blocked :schedule)}}))
+
 
 (def Allow
   (resource/api-resource

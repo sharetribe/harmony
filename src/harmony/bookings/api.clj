@@ -31,12 +31,14 @@
    (interceptor/handler
     ::create-bookable
     (fn [ctx]
-      (response/response {:id (java.util.UUID/randomUUID)
-                          :type :bookable
-                          :marketplaceId (java.util.UUID/randomUUID)
-                          :refId (java.util.UUID/randomUUID)
-                          :authorId (java.util.UUID/randomUUID)
-                          :unitType :day})))))
+      (response/response (resource/created-response
+                          types/Bookable
+                          {:id (java.util.UUID/randomUUID)
+                           :type :bookable
+                           :marketplaceId (java.util.UUID/randomUUID)
+                           :refId (java.util.UUID/randomUUID)
+                           :authorId (java.util.UUID/randomUUID)
+                           :unitType :day}))))))
 
 
 ;; (def show-bookable
