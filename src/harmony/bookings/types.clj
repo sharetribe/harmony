@@ -1,54 +1,80 @@
 (ns harmony.bookings.types
-  (:require [schema.core :as s]))
+  (:require [schema.core :as s]
+            [harmony.service.web.resource :as resource]))
 
-(s/defschema Bookable
-  {:id s/Uuid
-   :type (s/eq :bookable)
-   :marketplaceId s/Uuid
-   :refId s/Uuid
-   :authorId s/Uuid
-   :unitType (s/enum :day :time)})
+(declare Bookable Plan Allow Block TimeSlot Booking)
 
-(s/defschema Plan
-  {:id s/Uuid
-   :type (s/eq :plan)
-   :seats s/Int
-   (s/optional-key :schedule) s/Any ;; Format TBD
-   })
+(def Bookable
+  (resource/api-resource
+   {:type :bookable
 
-(s/defschema Allow
-  {:id s/Uuid
-   :type (s/eq :allow)
-   (s/optional-key :seatsOverride) long
-   :start s/Inst
-   :end s/Inst})
+    :attrs
+    {:marketplaceId s/Uuid
+     :refId s/Uuid
+     :authorId s/Uuid
+     :unitType (s/enum :day :time)}
 
-(s/defschema Block
-  {:id s/Uuid
-   :type (s/eq :block)
-   :start s/Inst
-   :end s/Inst})
+    :rels
+    {:activePlan Plan
+     :plans [Plan]
+     :bookings [Booking]
+     :exceptions [(s/cond-pre Allow Block)]}}))
 
-(s/defschema TimeSlot
-  {:type (s/eq :timeSlot)
-   :bookableId s/Uuid
-   :unitType (s/enum :day :type)
-   :seats s/Int
-   :start s/Inst
-   :end s/Inst
-   :year s/Int
-   :month s/Int
-   :day s/Int
-   :hour s/Int})
+;; (defapiresource Bookable :bookable
+;;   {:marketplaceId s/Uuid
+;;    :refId s/Uuid
+;;    :authorId s/Uuid
+;;    :unitType (s/enum :day :time)}
+;;   {:activePlan Plan
+;;    :plans [Plan]
+;;    :bookings [Booking]
+;;    :exceptions [(s/cond-pre Allow Block)]})
 
-(s/defschema Booking
-  {:id s/Uuid
-   :type (s/eq :booking)
-   :authorId s/Uuid
-   :status (s/enum :initial :cancelled :paid :accepted :rejected)
-   (s/optional-key :seats) s/Int
-   :start s/Inst
-   :end s/Inst})
+
+(def Plan
+  (resource/api-resource
+   {:type :plan
+    :attrs
+    {:seats s/Int
+     :planMode (s/enum :available :blocked :schedule)}}))
+
+(def Allow
+  (resource/api-resource
+   {:type :allow
+    :attrs
+    {(s/optional-key :seatsOverride) long
+     :start s/Inst
+     :end s/Inst}}))
+
+(def Block
+  (resource/api-resource
+   {:type :block
+    :attrs
+    {:start s/Inst
+     :end s/Inst}}))
+
+(def TimeSlot
+  (resource/api-resource
+   {:type :timeSlot
+    :attrs
+    {:unitType (s/enum :day :type)
+     :seats s/Int
+     :start s/Inst
+     :end s/Inst
+     :year s/Int
+     :month s/Int
+     :day s/Int
+     :hour s/Int}}))
+
+(def Booking
+  (resource/api-resource
+   {:type :booking
+    :attrs
+    {:authorId s/Uuid
+     :status (s/enum :initial :cancelled :paid :accepted :rejected)
+     (s/optional-key :seats) s/Int
+     :start s/Inst
+     :end s/Inst}}))
 
 
 (comment
@@ -60,5 +86,14 @@
     :refId (java.util.UUID/randomUUID)
     :authorId (java.util.UUID/randomUUID)
     :unitType :day})
+
+
+  Bookable
+  (resource/created-response-schema Bookable)
+  (resource/created-response-schema Plan)
+
+  (sequential? [:a])
+  (sequential? '(:a))
+  (sequential? {:a 1})
   )
 
