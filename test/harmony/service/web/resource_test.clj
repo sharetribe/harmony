@@ -134,9 +134,9 @@
                   :unitType :time
                   :activePlan {:id (fixed-uuid :plan1)
                                :seats 5
-                               :planMode :available}
-                  :plans [{:id (fixed-uuid :plan1) :seats 5 :planMode :available}
-                          {:id (fixed-uuid :plan2) :seats 3 :planMode :blocked}]}]
+                               :planMode :available
+                               :subPlan {:id (fixed-uuid :plan2) :seats 3 :planMode :blocked}}
+                  :plans [{:id (fixed-uuid :plan2) :seats 3 :planMode :blocked}]}]
     (resource/-normalized Bookable bookable))
 
   (let [bookable {:id (fixed-uuid :bookable)
@@ -144,6 +144,7 @@
                   :activePlan {:id (fixed-uuid :plan1)
                                :seats 5
                                :planMode :available}
-                  :plans {:id (fixed-uuid :plan1) :seats 5 :planMode :available}}]
+                  :plans [{:id (fixed-uuid :plan1) :seats 5 :planMode :available}
+                          {:id (fixed-uuid :plan2) :seats 3 :planMode :available}]}]
     (resource/-normalized Bookable bookable))
   )

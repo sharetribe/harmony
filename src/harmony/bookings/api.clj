@@ -31,14 +31,16 @@
    (interceptor/handler
     ::create-bookable
     (fn [ctx]
-      (response/response (resource/created-response
-                          types/Bookable
-                          {:id (java.util.UUID/randomUUID)
-                           :type :bookable
-                           :marketplaceId (java.util.UUID/randomUUID)
-                           :refId (java.util.UUID/randomUUID)
-                           :authorId (java.util.UUID/randomUUID)
-                           :unitType :day}))))))
+      (response/created
+       ""
+       (resource/created-response
+        types/Bookable
+        {:id (java.util.UUID/randomUUID)
+         :type :bookable
+         :marketplaceId (java.util.UUID/randomUUID)
+         :refId (java.util.UUID/randomUUID)
+         :authorId (java.util.UUID/randomUUID)
+         :unitType :day}))))))
 
 
 ;; (def show-bookable
@@ -66,13 +68,36 @@
 (def query-time-slots
   (api/annotate
    {:summary "Retrieve available time slots for bookable or bookables"
-    :parameters {:query-params {:id [s/Uuid] :marketplaceId s/Uuid :start s/Inst :end s/Inst}}
+    :parameters {:query-params {:refIds [s/Uuid]
+                                :marketplaceId s/Uuid
+                                :start s/Inst
+                                :end s/Inst}}
     :responses {http-status/ok {:body (resource/query-response-schema types/TimeSlot)}}
     :operationId :query-time-slots}
    (interceptor/handler
     ::query-time-slots
     (fn [ctx]
-      (response/response "Not implemented")))))
+      (response/response
+       (resource/query-response
+        types/TimeSlot
+        [{:id (java.util.UUID/randomUUID)
+          :refId (java.util.UUID/randomUUID)
+          :unitType :day
+          :seats 1
+          :start (java.util.Date.)
+          :end (java.util.Date.)
+          :year 2016
+          :month 9
+          :day 1}
+         {:id (java.util.UUID/randomUUID)
+          :refId (java.util.UUID/randomUUID)
+          :unitType :day
+          :seats 1
+          :start (java.util.Date.)
+          :end (java.util.Date.)
+          :year 2016
+          :month 9
+          :day 1}]))))))
 
 
 (def api-interceptors

@@ -11,7 +11,9 @@
             [pedestal-api.routes :as api.routes]
             [io.pedestal.interceptor :refer [interceptor]]
             [ring.util.http-status :as status]
-            [pedestal-api.core :as api]))
+            [pedestal-api.core :as api]
+            [clj-time.format :as format]
+            [clj-time.coerce]))
 
 (defn swaggered-routes
   "Take a doc and a seq of route-maps (the expanded version of routes)
@@ -74,8 +76,24 @@
                 vec)
            x)))))
 
+(def api-date-time-formatter (format/formatters :date-time))
+
+(defn- date-matcher [schema]
+  (when (= s/Inst schema)
+    (coerce/safe
+     (fn [x]
+       (if (string? x)
+         (->> x
+              (format/parse api-date-time-formatter)
+              clj-time.coerce/to-date)
+         x)))))
+
+
 (def default-coercions
-  (coerce/first-matcher [num-seq-matcher uuid-seq-matcher coerce/string-coercion-matcher]))
+  (coerce/first-matcher [date-matcher
+                         uuid-seq-matcher
+                         coerce/string-coercion-matcher
+                         num-seq-matcher]))
 
 (defn coerce-request
   ([] (coerce-request default-coercions))

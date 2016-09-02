@@ -11,6 +11,7 @@
                  [prismatic/schema "1.1.3"]
                  [io.aviso/config "0.1.13"]
                  [pedestal-api "0.3.0"]
+                 [clj-time "0.12.0"]
 
                  ;; Logging integration
                  [ch.qos.logback/logback-classic "1.1.7" :exclusions [org.slf4j/slf4j-api]]

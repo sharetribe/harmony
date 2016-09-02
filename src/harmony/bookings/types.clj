@@ -60,14 +60,14 @@
   (resource/api-resource
    {:type :timeSlot
     :attrs
-    {:unitType (s/enum :day :type)
+    {:refId s/Uuid
+     :unitType (s/enum :day :type)
      :seats s/Int
      :start s/Inst
      :end s/Inst
      :year s/Int
      :month s/Int
-     :day s/Int
-     :hour s/Int}}))
+     :day s/Int}}))
 
 (def Booking
   (resource/api-resource

@@ -21,13 +21,6 @@
                                     {:data (s/cond-pre ResourceRef
                                                        [ResourceRef])}}})
 
-(s/defschema CreatedResponse
-  "A specialized version of API response that is returned with 201
-  Created responses."
-  {:data Resource
-   (s/optional-key :meta) {s/Any s/Any}
-   (s/optional-key :included) [Resource]})
-
 (s/defschema QueryResponse
   "A specialized version of API response that is returned for query
   commands."
@@ -169,7 +162,7 @@
 (defn api-resource
   "Define an API resource. Api resources can be used to describe the
   format of the API responses and transform tree formatted data into
-  normalized API responses.  transforming data into response format."
+  normalized API responses."
   ([resource-desc]
    (let [{:keys [type attrs rels]} resource-desc]
      (assert (keyword? type) "Type must be defined and must be a keyword.")
@@ -200,5 +193,17 @@
 ;;
 
 (defn created-response
-  [api-res data]
-  )
+  "Create a response document from the newly created resource x to be
+  sent as 201 Created body."
+  ([api-res x] (created-response api-res x {}))
+  ([api-res x meta]
+   (merge (-normalized api-res x)
+          {:meta meta})))
+
+
+(defn query-response
+  "Create a response document for answering a query."
+  ([api-res xs] (query-response api-res xs {}))
+  ([api-res xs meta]
+   (merge (-normalized [api-res] xs)
+          {:meta meta})))
