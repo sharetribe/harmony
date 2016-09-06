@@ -41,7 +41,18 @@
   clojure.lang.APersistentVector
   (-normalized [this x-or-xs]
     (assert (sequential? x-or-xs) (str "x-or-xs must be a sequence. You gave: " x-or-xs))
-    (-normalized (first this) x-or-xs)))
+    (-normalized (first this) x-or-xs))
+
+  clojure.lang.Var
+  (-normalized [this x-or-xs]
+    (-normalized (var-get this) x-or-xs))
+
+  clojure.lang.Var$Unbound
+  (-normalized [this x-or-xs]
+    (throw (ex-info
+            (str "Define referenced types before referencing type "
+                 "or use var reference (#'Relationship) to refer to cyclic dependencies.")
+            {:this this :x-or-xs x-or-xs}))))
 
 
 ;; resource schema implementation

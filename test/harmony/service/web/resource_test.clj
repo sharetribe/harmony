@@ -3,7 +3,14 @@
             [clojure.test :refer :all]
             [schema.core :as s]))
 
-(declare Plan)
+(def Plan
+  (resource/api-resource
+   {:type :plan
+    :attrs
+    {:seats s/Int
+     :planMode (s/enum :available :blocked :schedule)}
+    :rels
+    {:subPlan #'Plan}}))
 
 (def Bookable
   (resource/api-resource
@@ -17,15 +24,6 @@
     :rels
     {:activePlan Plan
      :plans [Plan]}}))
-
-(def Plan
-  (resource/api-resource
-   {:type :plan
-    :attrs
-    {:seats s/Int
-     :planMode (s/enum :available :blocked :schedule)}
-    :rels
-    {:subPlan Plan}}))
 
 (def fixed-uuid
   (let [ids-holder (atom {})]
