@@ -9,6 +9,7 @@
             [ring.util.http-status :as http-status]
 
             [harmony.bookings.types :as types]
+            [harmony.bookings.service :as bookings]
             [harmony.service.web.content-negotiation :as content-negotiation]
             [harmony.service.web.swagger :refer [swaggered-routes swagger-json coerce-request]]
             [harmony.service.web.resource :as resource]
@@ -21,6 +22,12 @@
    :refId s/Uuid
    :authorId s/Uuid})
 
+(defonce myreq (atom nil))
+
+(comment
+  (:body-params @myctx)
+  )
+
 (def create-bookable
   (api/annotate
    {:summary "Create a bookable"
@@ -30,29 +37,28 @@
     :operationId :create-bookable}
    (interceptor/handler
     ::create-bookable
+    (fn [req]
+      (reset! myreq req)
+      (let [create-cmd (get req :body-params)
+            b (bookings/create-bookable create-cmd)]
+        (response/created
+         ""
+         (resource/created-response
+          types/Bookable
+          b)))))))
+
+
+(def show-bookable
+  (api/annotate
+   {:summary "Retrieve a bookable"
+    :parameters {:query-params {:marketplaceId s/Uuid
+                                :refId s/Uuid}}
+    :responses {http-status/ok {:body s/Str}}
+    :operationId :show-availability}
+   (interceptor/handler
+    ::show-availability
     (fn [ctx]
-      (response/created
-       ""
-       (resource/created-response
-        types/Bookable
-        {:id (java.util.UUID/randomUUID)
-         :type :bookable
-         :marketplaceId (java.util.UUID/randomUUID)
-         :refId (java.util.UUID/randomUUID)
-         :authorId (java.util.UUID/randomUUID)
-         :unitType :day}))))))
-
-
-;; (def show-bookable
-;;   (api/annotate
-;;    {:summary "Retrieve a bookable"
-;;     :parameters {:query-params {:id s/Uuid}}
-;;     :responses {http-status/ok {:body s/Str}}
-;;     :operationId :show-availability}
-;;    (interceptor/handler
-;;     ::show-availability
-;;     (fn [ctx]
-;;       (response/response "Not implemented!")))))
+      (response/response "Not implemented!")))))
 
 ;; (def update-availability
 ;;   (api/annotate
@@ -118,7 +124,7 @@
    (route/expand-routes
     #{["/bookables/create" :post (conj api-interceptors create-bookable)]
       ;; ["/bookables/updateAvailability" :post update-availability]
-      ;; ["/bookables/show" :get (conj api-interceptors show-bookable)]
+      ["/bookables/show" :get (conj api-interceptors show-bookable)]
 
       ["/timeslots/query" :get (conj api-interceptors query-time-slots)]
 
