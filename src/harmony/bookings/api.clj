@@ -28,24 +28,29 @@
   (:body-params @myctx)
   )
 
-(def create-bookable
-  (api/annotate
-   {:summary "Create a bookable"
-    :parameters {:body-params CreateBookableCmd}
-    :responses {http-status/created
-                {:body (resource/created-response-schema types/Bookable)}}
-    :operationId :create-bookable}
-   (interceptor/handler
-    ::create-bookable
-    (fn [req]
-      (reset! myreq req)
-      (let [create-cmd (get req :body-params)
-            b (bookings/create-bookable create-cmd)]
-        (response/created
-         ""
-         (resource/created-response
-          types/Bookable
-          b)))))))
+(defn create-bookable [deps]
+  (let [{:keys [db]} deps]
+    (api/annotate
+     {:summary "Create a bookable"
+      :parameters {:body-params CreateBookableCmd}
+      :responses {http-status/created   ; 201 Created
+                  {:body (resource/created-response-schema types/Bookable)}
+                  http-status/conflict {:body s/Str}} ; 409 Conflict
+      :operationId :create-bookable}
+     (interceptor/handler
+      ::create-bookable
+      (fn [req]
+        (reset! myreq req)
+        (let [create-cmd (get req :body-params)
+              b (bookings/create-bookable db create-cmd)]
+          (if b
+            (response/created
+             ""
+             (resource/created-response
+              types/Bookable
+              b))
+            (-> (response/response "Bookable for given marketplaceId and refId already exists.")
+                (response/status http-status/conflict)))))))))
 
 
 (def show-bookable
@@ -114,15 +119,14 @@
    (coerce-request)
    (api/validate-response)])
 
-(defn- make-routes
-  [config]
+(defn- make-routes [config deps]
   (swaggered-routes
    {:info {:title "The Harmony Bookings API"
            :description "API for managing resource availability and
            making bookings."
            :version "1.0"}}
    (route/expand-routes
-    #{["/bookables/create" :post (conj api-interceptors create-bookable)]
+    #{["/bookables/create" :post (conj api-interceptors (create-bookable deps))]
       ;; ["/bookables/updateAvailability" :post update-availability]
       ["/bookables/show" :get (conj api-interceptors show-bookable)]
 
@@ -131,10 +135,10 @@
       ["/swagger.json" :get (conj api-interceptors (swagger-json))]
       ["/apidoc/*resource" :get api/swagger-ui]})))
 
-(defrecord BookingsAPI [config]
+(defrecord BookingsAPI [config db]
   IRoutes
   (build-routes [_]
-    (make-routes config)))
+    (make-routes config {:db db})))
 
 (defn new-bookings-api [config]
   (map->BookingsAPI {:config config}))
