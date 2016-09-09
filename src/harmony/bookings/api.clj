@@ -85,39 +85,32 @@
 ;;     (fn [ctx]
 ;;       (response/response "Not implemented!")))))
 
-(def query-time-slots
-  (api/annotate
-   {:summary "Retrieve available time slots for bookable or bookables"
-    :parameters {:query-params {:refIds [s/Uuid]
-                                :marketplaceId s/Uuid
-                                :start s/Inst
-                                :end s/Inst}}
-    :responses {http-status/ok {:body (resource/query-response-schema types/TimeSlot)}}
-    :operationId :query-time-slots}
-   (interceptor/handler
-    ::query-time-slots
-    (fn [ctx]
-      (response/response
-       (resource/query-response
-        types/TimeSlot
-        [{:id (java.util.UUID/randomUUID)
-          :refId (java.util.UUID/randomUUID)
-          :unitType :day
-          :seats 1
-          :start (java.util.Date.)
-          :end (java.util.Date.)
-          :year 2016
-          :month 9
-          :day 1}
-         {:id (java.util.UUID/randomUUID)
-          :refId (java.util.UUID/randomUUID)
-          :unitType :day
-          :seats 1
-          :start (java.util.Date.)
-          :end (java.util.Date.)
-          :year 2016
-          :month 9
-          :day 1}]))))))
+(defn query-time-slots [deps]
+  (let [{:keys [db]} deps]
+    (api/annotate
+     {:summary "Retrieve available time slots for bookable or bookables"
+      :parameters {:query-params {:marketplaceId s/Uuid
+                                  :refId s/Uuid
+                                  :start s/Inst
+                                  :end s/Inst}}
+      :responses {http-status/ok
+                  {:body (resource/query-response-schema types/TimeSlot)}
+                  http-status/not-found
+                  {:body s/Str}}
+      :operationId :query-time-slots}
+     (interceptor/handler
+      ::query-time-slots
+      (fn [req]
+        (let [query (get req :query-params)
+              time-slots (bookings/calc-free-time-slots db query)]
+          (if time-slots
+            (response/response
+             (resource/query-response
+              types/TimeSlot
+              time-slots))
+            (-> (response/response
+                 "No bookable found for given marketplaceId and refId.")
+                (response/status http-status/not-found)))))))))
 
 
 (def api-interceptors
@@ -139,7 +132,7 @@
       ;; ["/bookables/updateAvailability" :post update-availability]
       ["/bookables/show" :get (conj api-interceptors (show-bookable deps))]
 
-      ["/timeslots/query" :get (conj api-interceptors query-time-slots)]
+      ["/timeslots/query" :get (conj api-interceptors (query-time-slots deps))]
 
       ["/swagger.json" :get (conj api-interceptors (swagger-json))]
       ["/apidoc/*resource" :get api/swagger-ui]})))
