@@ -25,7 +25,8 @@
 (defonce myreq (atom nil))
 
 (comment
-  (:body-params @myctx)
+  (:body-params @myreq)
+  ((:url-for @myreq) ::show-bookable :params {:marketplaceId 123 :refId 321})
   )
 
 (defn create-bookable [deps]
@@ -42,6 +43,7 @@
       (fn [req]
         (reset! myreq req)
         (let [create-cmd (get req :body-params)
+              url-for (get req :url-for)
               b (bookings/create-bookable db create-cmd)]
           (if b
             (response/created
@@ -53,17 +55,24 @@
                 (response/status http-status/conflict)))))))))
 
 
-(def show-bookable
-  (api/annotate
-   {:summary "Retrieve a bookable"
-    :parameters {:query-params {:marketplaceId s/Uuid
-                                :refId s/Uuid}}
-    :responses {http-status/ok {:body s/Str}}
-    :operationId :show-availability}
-   (interceptor/handler
-    ::show-availability
-    (fn [ctx]
-      (response/response "Not implemented!")))))
+(defn show-bookable [deps]
+  (let [{:keys [db]} deps]
+    (api/annotate
+     {:summary "Retrieve a bookable"
+      :parameters {:query-params {:marketplaceId s/Uuid
+                                  :refId s/Uuid}}
+      :responses {http-status/ok {:body (resource/show-response-schema types/Bookable)}
+                  http-status/not-found {:body s/Str}}
+      :operationId :show-bookable}
+     (interceptor/handler
+      ::show-bookable
+      (fn [req]
+        (let [{:keys [marketplaceId refId]} (get req :query-params)
+              b (bookings/fetch-bookable db marketplaceId refId)]
+          (if b
+            (response/response (resource/show-response types/Bookable b))
+            (-> (response/response "No bookable found for given marketplaceId and refId.")
+                (response/status http-status/not-found)))))))))
 
 ;; (def update-availability
 ;;   (api/annotate
@@ -128,7 +137,7 @@
    (route/expand-routes
     #{["/bookables/create" :post (conj api-interceptors (create-bookable deps))]
       ;; ["/bookables/updateAvailability" :post update-availability]
-      ["/bookables/show" :get (conj api-interceptors show-bookable)]
+      ["/bookables/show" :get (conj api-interceptors (show-bookable deps))]
 
       ["/timeslots/query" :get (conj api-interceptors query-time-slots)]
 

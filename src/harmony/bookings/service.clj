@@ -23,6 +23,12 @@
                                             {:m-id marketplaceId :ref-id refId})]
         (assoc bookable :activePlan active-plan)))))
 
+(defn fetch-bookable
+  [db m-id ref-id]
+  (when-let [{:keys [bookable active-plan]} (store/fetch-bookable
+                                             db
+                                             {:m-id m-id :ref-id ref-id})]
+    (assoc bookable :activePlan active-plan)))
 
 (comment
   (def db (store/new-mem-booking-store))
