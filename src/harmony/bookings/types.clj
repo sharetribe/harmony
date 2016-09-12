@@ -15,11 +15,11 @@
      :unitType (s/enum :day :time)}
 
     :rels
-    {:activePlan Plan
-     :plans [Plan]
-     :bookings [Booking]
-     :allows [Allow]
-     :blocks [Block]}}))
+    {:activePlan #'Plan
+     :plans [#'Plan]
+     :bookings [#'Booking]
+     :allows [#'Allow]
+     :blocks [#'Block]}}))
 
 ;; (defapiresource Bookable :bookable
 ;;   {:marketplaceId s/Uuid

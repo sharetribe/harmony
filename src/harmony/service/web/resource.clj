@@ -199,6 +199,14 @@
    (s/optional-key :meta) {s/Any s/Any}
    (s/optional-key :included) [Resource]})
 
+(defn show-response-schema
+  "Buidl a schema for a 200 OK show response for a given api resource
+  type."
+  [api-res]
+  {:data (-response-schema api-res)
+   (s/optional-key :meta) {s/Any s/Any}
+   (s/optional-key :included) [Resource]})
+
 
 ;; Reponse document builders
 ;;
@@ -217,4 +225,11 @@
   ([api-res xs] (query-response api-res xs {}))
   ([api-res xs meta]
    (merge (-normalized [api-res] xs)
+          {:meta meta})))
+
+(defn show-response
+  "Create a response document for answering a show cmd."
+  ([api-res x] (created-response api-res x {}))
+  ([api-res x meta]
+   (merge (-normalized api-res x)
           {:meta meta})))
