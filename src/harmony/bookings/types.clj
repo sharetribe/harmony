@@ -73,7 +73,7 @@
   (resource/api-resource
    {:type :booking
     :attrs
-    {:authorId s/Uuid
+    {:customerId s/Uuid
      :status (s/enum :initial :cancelled :paid :accepted :rejected)
      (s/optional-key :seats) s/Int
      :start s/Inst

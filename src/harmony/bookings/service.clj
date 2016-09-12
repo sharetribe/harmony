@@ -41,11 +41,18 @@
         [year month day] ((juxt t/year t/month t/day) dt)]
     (t/date-midnight year month day)))
 
-(defn- free-dates [start end]
-  (periodic/periodic-seq
-   (midnight-date-time start)
-   (midnight-date-time end)
-   (t/days 1)))
+(defn- free-dates [start end bookings]
+  (let [booking-is (map #(t/interval (midnight-date-time (:start %))
+                                     (midnight-date-time (:end %)))
+                        bookings)
+        booked? (fn [dt]
+                  (let [day-i (t/interval dt (t/plus dt (t/days 1)))]
+                    (some #(t/overlaps? day-i %) booking-is)))]
+    (->> (periodic/periodic-seq
+          (midnight-date-time start)
+          (midnight-date-time end)
+          (t/days 1))
+         (remove booked?))))
 
 (defn- time-slot [ref-id date-time]
   {:id (java.util.UUID/randomUUID)
@@ -63,9 +70,36 @@
 
 (defn calc-free-time-slots
   [db {:keys [marketplaceId refId start end]}]
-  (when (store/fetch-bookable db {:m-id marketplaceId :ref-id refId})
-    (->> (free-dates start end)
-         (map #(time-slot refId %)))))
+  (when-let [{:keys [bookable]} (store/fetch-bookable
+                                 db
+                                 {:m-id marketplaceId :ref-id refId})]
+    (let [bookings (store/fetch-bookings db {:bookable-id (:id bookable)
+                                             :start start
+                                             :end end})]
+         (->> (free-dates start end bookings)
+              (map #(time-slot refId %))))))
+
+(defn- booking-defaults
+  [{:keys [m-id bookable-id customer-id initial-status start end]}]
+  {:marketplaceId m-id
+   :bookableId bookable-id
+   :customerId customer-id
+   :status initial-status
+   :seats 1
+   :start start
+   :end end})
+
+(defn initiate-booking [db cmd]
+  (let [{:keys [marketplaceId refId customerId initialStatus start end]} cmd]
+    (when-let [{:keys [bookable]} (store/fetch-bookable
+                                   db
+                                   {:m-id marketplaceId :ref-id refId})]
+      (store/insert-booking db (booking-defaults {:m-id marketplaceId
+                                                  :bookable-id (:id bookable)
+                                                  :customer-id customerId
+                                                  :initial-status initialStatus
+                                                  :start start
+                                                  :end end})))))
 
 (comment
   (def db (store/new-mem-booking-store))
