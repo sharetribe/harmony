@@ -74,6 +74,36 @@
             (-> (response/response "No bookable found for given marketplaceId and refId.")
                 (response/status http-status/not-found)))))))))
 
+
+(s/defschema CreateBookingCmd
+  "Create a new booking for a referenced object, customer and time."
+  {:marketplaceId s/Uuid
+   :refId s/Uuid
+   :customerId s/Uuid
+   :initialStatus (s/enum :initial :paid)
+   :start s/Inst
+   :end s/Inst})
+
+(defn initiate-booking [deps]
+  (let [{:keys [db]} deps]
+    (api/annotate
+     {:summary "Create a new booking"
+      :parameters {:body-params CreateBookingCmd}
+      :responses {http-status/created {:body (resource/created-response-schema types/Booking)}
+                  http-status/conflict {:body s/Str}}
+      :operationId :initiate-booking}
+     (interceptor/handler
+      ::initiate-booking
+      (fn [req]
+        (let [create-cmd (get req :body-params)
+              booking (bookings/initiate-booking db create-cmd)]
+          (if booking
+            (response/created
+             ""
+             (resource/created-response types/Booking booking))
+            (-> (response/response "Cannot create booking.")
+                (response/status http-status/conflict)))))))))
+
 ;; (def update-availability
 ;;   (api/annotate
 ;;    {:summary "Create and update an availability schedule for a bookable."
@@ -131,8 +161,8 @@
     #{["/bookables/create" :post (conj api-interceptors (create-bookable deps))]
       ;; ["/bookables/updateAvailability" :post update-availability]
       ["/bookables/show" :get (conj api-interceptors (show-bookable deps))]
-
       ["/timeslots/query" :get (conj api-interceptors (query-time-slots deps))]
+      ["/bookings/initiate" :post (conj api-interceptors (initiate-booking deps))]
 
       ["/swagger.json" :get (conj api-interceptors (swagger-json))]
       ["/apidoc/*resource" :get api/swagger-ui]})))

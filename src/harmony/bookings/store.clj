@@ -1,5 +1,7 @@
 (ns harmony.bookings.store
-  (:require [com.stuartsierra.component :as component]))
+  (:require [com.stuartsierra.component :as component]
+            [clj-time.core :as t]
+            [clj-time.coerce :refer [to-date-time]]))
 
 (defrecord InMemBookingStore [state]
     component/Lifecycle
@@ -34,7 +36,11 @@
     (swap! (:state store)
            (fn [content]
              (if (find-bookable content (:marketplaceId bookable) (:refId bookable))
-               (throw (ex-info "Unique conditions violation" {}))
+               (throw (ex-info
+                       "A bookable for given marketplace and reference id already exists."
+                       {:error :already-exists
+                        :data {:m-id (:marketplaceId bookable)
+                               :ref-id (:refId bookable)}}))
                (-> content
                    (assoc-in [:bookable bid] (merge bookable {:id bid :activePlan pid}))
                    (assoc-in [:plan pid] (assoc initial-plan :id pid))))))))
@@ -46,6 +52,32 @@
       {:bookable bookable
        :active-plan (find-plan content (:activePlan bookable))})))
 
+(defn- midnight-date-time [inst]
+  (let [dt (to-date-time inst)
+        [year month day] ((juxt t/year t/month t/day) dt)]
+    (t/date-midnight year month day)))
+
+(defn- to-day-interval [start end]
+  (t/interval (midnight-date-time start) (midnight-date-time end)))
+
+(defn- find-bookings [content bookable-id start end]
+  (let [i-searched (to-day-interval start end)]
+    (filter (fn [b]
+              (and (= (:bookableId b) bookable-id)
+                   (t/overlaps? i-searched
+                                (to-day-interval (:start b) (:end b)))))
+            (-> content :booking vals))))
+
+(defn fetch-bookings [store {:keys [bookable-id start end]}]
+  (find-bookings @(:state store) bookable-id start end))
+
+(defn insert-booking
+  [store booking]
+  (let [bid (java.util.UUID/randomUUID)]
+    (get-in (swap! (:state store)
+                    (fn [content]
+                      (assoc-in content [:booking bid] (assoc booking :id bid))))
+            [:booking bid])))
 
 (comment
   (def s (new-mem-booking-store))
