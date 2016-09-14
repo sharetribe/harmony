@@ -1,5 +1,6 @@
 (ns harmony.util.data
-  "Utilities for working with Clojure data structures.")
+  "Utilities for working with Clojure data structures."
+  (:require [clojure.set]))
 
 ;; assoc, dissoc and update for relational data modelled as a seq of
 ;; maps (called xrel by functions in clojure.set namespace). See tests
