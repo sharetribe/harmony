@@ -1,0 +1,3 @@
+{:web-server
+ {:port #config/prop ["PORT" 8086]
+  :dev-mode? true}}
