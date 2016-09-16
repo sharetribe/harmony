@@ -2,6 +2,7 @@
   (:require [clojure.test :refer :all]
             [harmony.system :as system]
             [com.stuartsierra.component :as component]
+            [clj-http.client :as client]
             [harmony.config :as config]))
 
 (def fixed-uuid
@@ -28,6 +29,37 @@
                       (f)
                       (teardown)))
 
+;; Test: Create bookable
+;; Validate:
+;; - status
+;; - response data
+(deftest create-bookable
+  (is (= 201 (:status (client/post
+                       "http://localhost:8086/bookables/create"
+                       {
+                        :form-params {:marketplaceId (java.util.UUID/randomUUID)
+                                      :refId (java.util.UUID/randomUUID)
+                                      :authorId (java.util.UUID/randomUUID)
+                                      }
+                        :content-type :transit+msgpack})))))
+
+;; Test: Prevent creating the same bookable twice (same marketplaceId
+;; and refId)
+;; Validate:
+;; - status
+
+;; Test: Create booking
+;; Validate:
+;; - status
+;; - response data
+
+;; Test: Create bookable and ask timeslots. Then create booking and
+;; ask timeslots again. Assert that the reserved timeslots aren't
+;; returned.
+;; Validate:
+;; - status
+;; - response data
+
 (deftest foo
   (is (= 1 1)))
 
@@ -36,4 +68,5 @@
   (setup)
   (teardown)
   test-system
+  (client/get "https://www.google.com")
   )

@@ -24,6 +24,7 @@
   :source-paths ["src"]
   :resource-paths ["resources"]
   :profiles {:uberjar {:aot :all}
-             :dev {:dependencies [[reloaded.repl "0.2.2"]]
+             :dev {:dependencies [[reloaded.repl "0.2.2"]
+                                  [clj-http "2.2.0"]]
                    :source-paths ["dev"]
                    :main user}})
