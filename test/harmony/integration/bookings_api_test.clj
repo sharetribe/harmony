@@ -61,15 +61,12 @@
    :end (plus start 1)})
 
 (deftest create-bookable
-  (let [marketplaceId #uuid "33be021c-18d5-44df-bfe4-c5d929807b01"
-        refId #uuid "33be021c-18d5-44df-bfe4-c5d929807b02"
-        authorId #uuid "33be021c-18d5-44df-bfe4-c5d929807b03"
-        {:keys [status body]} (client/post
+  (let [{:keys [status body]} (client/post
                                "http://localhost:8086/bookables/create"
                                {
-                                :form-params {:marketplaceId marketplaceId
-                                              :refId refId
-                                              :authorId authorId
+                                :form-params {:marketplaceId (fixed-uuid :marketplaceId)
+                                              :refId (fixed-uuid :refId)
+                                              :authorId (fixed-uuid :authorId)
                                               }
                                 :as :transit+msgpack
                                 :accept :transit+msgpack
@@ -77,209 +74,196 @@
     (is (= 201 status))
     (is (json-api-response? body))
     (is (json-api-resource? (:data body)))
-    (is (resource-attrs-include? {:marketplaceId marketplaceId
-                                  :refId refId
-                                  :authorId authorId
+    (is (resource-attrs-include? {:marketplaceId (fixed-uuid :marketplaceId)
+                                  :refId (fixed-uuid :refId)
+                                  :authorId (fixed-uuid :authorId)
                                   :unitType :day
                                   }
                                  (get-in body [:data :attributes])))))
 
 (deftest prevent-bookable-double-create
-  (let [marketplaceId #uuid "33be021c-18d5-44df-bfe4-c5d929807b01"
-        refId #uuid "33be021c-18d5-44df-bfe4-c5d929807b02"
-        authorId #uuid "33be021c-18d5-44df-bfe4-c5d929807b03"]
+  (let [{:keys [status body]} (client/post
+                               "http://localhost:8086/bookables/create"
+                               {
+                                :form-params {:marketplaceId (fixed-uuid :marketplaceId)
+                                              :refId (fixed-uuid :refId)
+                                              :authorId (fixed-uuid :authorId)
+                                              }
+                                :as :transit+msgpack
+                                :accept :transit+msgpack
+                                :content-type :transit+msgpack})]
 
-    (let [{:keys [status body]} (client/post
-                                 "http://localhost:8086/bookables/create"
-                                 {
-                                  :form-params {:marketplaceId marketplaceId
-                                                :refId refId
-                                                :authorId authorId
-                                                }
-                                  :as :transit+msgpack
-                                  :accept :transit+msgpack
-                                  :content-type :transit+msgpack})]
-
-      (is (= 201 status)))
+    (is (= 201 status)))
 
 
-    (let [{:keys [status body]} (client/post
-                                 "http://localhost:8086/bookables/create"
-                                 {
-                                  :form-params {:marketplaceId marketplaceId
-                                                :refId refId
-                                                :authorId authorId
-                                                }
-                                  :as :transit+msgpack
-                                  :accept :transit+msgpack
-                                  :content-type :transit+msgpack
-                                  :throw-exceptions false})]
-      (is (= 409 status)))))
+  (let [{:keys [status body]} (client/post
+                               "http://localhost:8086/bookables/create"
+                               {
+                                :form-params {:marketplaceId (fixed-uuid :marketplaceId)
+                                              :refId (fixed-uuid :refId)
+                                              :authorId (fixed-uuid :authorId)
+                                              }
+                                :as :transit+msgpack
+                                :accept :transit+msgpack
+                                :content-type :transit+msgpack
+                                :throw-exceptions false})]
+    (is (= 409 status))))
 
 
 (deftest create-booking
-  (let [marketplaceId #uuid "33be021c-18d5-44df-bfe4-c5d929807b01"
-        refId #uuid "33be021c-18d5-44df-bfe4-c5d929807b02"
-        authorId #uuid "33be021c-18d5-44df-bfe4-c5d929807b03"]
+  (let [{:keys [status body]} (client/post
+                               "http://localhost:8086/bookables/create"
+                               {:form-params {:marketplaceId (fixed-uuid :marketplaceId)
+                                              :refId (fixed-uuid :refId)
+                                              :authorId (fixed-uuid :authorId)
+                                              }
+                                :as :transit+msgpack
+                                :accept :transit+msgpack
+                                :content-type :transit+msgpack})]
 
-    (let [{:keys [status body]} (client/post
-                                 "http://localhost:8086/bookables/create"
-                                 {:form-params {:marketplaceId marketplaceId
-                                                :refId refId
-                                                :authorId authorId
-                                                }
-                                  :as :transit+msgpack
-                                  :accept :transit+msgpack
-                                  :content-type :transit+msgpack})]
+    (is (= 201 status)))
 
-      (is (= 201 status)))
-
-    (let [customerId #uuid "33be021c-18d5-44df-bfe4-c5d929807b04"
-          {:keys [status body]}
-          (client/post
-           "http://localhost:8086/bookings/initiate"
-           {:form-params {:marketplaceId marketplaceId
-                          :customerId customerId
-                          :refId refId
-                          :initialStatus :paid
-                          :start #inst "2016-09-19T00:00:00.000Z",
-                          :end #inst "2016-09-20T00:00:00.000Z",
-                          }
-            :as :transit+msgpack
-            :accept :transit+msgpack
-            :content-type :transit+msgpack})]
+  (let [customerId #uuid "33be021c-18d5-44df-bfe4-c5d929807b04"
+        {:keys [status body]}
+        (client/post
+         "http://localhost:8086/bookings/initiate"
+         {:form-params {:marketplaceId (fixed-uuid :marketplaceId)
+                        :customerId (fixed-uuid :customerId)
+                        :refId (fixed-uuid :refId)
+                        :initialStatus :paid
+                        :start #inst "2016-09-19T00:00:00.000Z",
+                        :end #inst "2016-09-20T00:00:00.000Z",
+                        }
+          :as :transit+msgpack
+          :accept :transit+msgpack
+          :content-type :transit+msgpack})]
 
 
-      (is (= 201 status))
-      (is (json-api-response? body))
-      (is (json-api-resource? (:data body)))
-      (is (resource-attrs-include? {:customerId customerId
-                                    :status :paid
-                                    :seats 1
-                                    :start #inst "2016-09-19T00:00:00.000Z",
-                                    :end #inst "2016-09-20T00:00:00.000Z",
-                                    }
-                                   (get-in body [:data :attributes]))))))
+    (is (= 201 status))
+    (is (json-api-response? body))
+    (is (json-api-resource? (:data body)))
+    (is (resource-attrs-include? {:customerId (fixed-uuid :customerId)
+                                  :status :paid
+                                  :seats 1
+                                  :start #inst "2016-09-19T00:00:00.000Z",
+                                  :end #inst "2016-09-20T00:00:00.000Z",
+                                  }
+                                 (get-in body [:data :attributes])))))
 
 (deftest show-timeslots
-  (let [marketplaceId #uuid "33be021c-18d5-44df-bfe4-c5d929807b01"
-        refId #uuid "33be021c-18d5-44df-bfe4-c5d929807b02"
-        authorId #uuid "33be021c-18d5-44df-bfe4-c5d929807b03"]
+  (let [{:keys [status body]} (client/post
+                               "http://localhost:8086/bookables/create"
+                               {:form-params {:marketplaceId (fixed-uuid :marketplaceId)
+                                              :refId (fixed-uuid :refId)
+                                              :authorId (fixed-uuid :authorId)}
+                                :as :transit+msgpack
+                                :accept :transit+msgpack
+                                :content-type :transit+msgpack})]
 
-    (let [{:keys [status body]} (client/post
-                                 "http://localhost:8086/bookables/create"
-                                 {:form-params {:marketplaceId marketplaceId
-                                                :refId refId
-                                                :authorId authorId}
-                                  :as :transit+msgpack
-                                  :accept :transit+msgpack
-                                  :content-type :transit+msgpack})]
+    (is (= 201 status)))
 
-      (is (= 201 status)))
-
-    (let [{:keys [status body]} (client/get
+  (let [{:keys [status body]} (client/get
                                "http://localhost:8086/timeslots/query"
-                               {:query-params {:marketplaceId marketplaceId
-                                              :refId refId
-                                              :start "2016-09-19T00:00:00.000Z"
-                                              :end "2016-09-26T00:00:00.000Z"}
+                               {:query-params {:marketplaceId (fixed-uuid :marketplaceId)
+                                               :refId (fixed-uuid :refId)
+                                               :start "2016-09-19T00:00:00.000Z"
+                                               :end "2016-09-26T00:00:00.000Z"}
                                 :as :transit+msgpack
                                 :accept :transit+msgpack})]
 
-      (is (= 200 status))
-      (is (json-api-response? body))
-      (is (every? json-api-resource? (:data body)))
+    (is (= 200 status))
+    (is (json-api-response? body))
+    (is (every? json-api-resource? (:data body)))
 
-      (let [timeslots (map timeslot [#inst "2016-09-19T00:00:00.000Z"
-                                     #inst "2016-09-20T00:00:00.000Z"
-                                     #inst "2016-09-21T00:00:00.000Z"
-                                     #inst "2016-09-22T00:00:00.000Z"
-                                     #inst "2016-09-23T00:00:00.000Z"
-                                     #inst "2016-09-24T00:00:00.000Z"
-                                     #inst "2016-09-25T00:00:00.000Z"])
-            timeslot-resources (map vector timeslots (:data body))]
+    (let [timeslots (map timeslot [#inst "2016-09-19T00:00:00.000Z"
+                                   #inst "2016-09-20T00:00:00.000Z"
+                                   #inst "2016-09-21T00:00:00.000Z"
+                                   #inst "2016-09-22T00:00:00.000Z"
+                                   #inst "2016-09-23T00:00:00.000Z"
+                                   #inst "2016-09-24T00:00:00.000Z"
+                                   #inst "2016-09-25T00:00:00.000Z"])
+          timeslot-resources (map vector timeslots (:data body))]
 
-        (is (= (count timeslots) (count (:data body))))
-        (is (every? (map (fn [[timeslot res]] (and (resource-attrs-include? {:refId refId
-                                                                             :unitType :day
-                                                                             :seats 1})
-                                                   (resource-attrs-include? timeslot)))) timeslot-resources))))
+      (is (= (count timeslots) (count (:data body))))
+      (is (every? (map (fn [[timeslot res]] (and (resource-attrs-include? {:refId (fixed-uuid :refId)
+                                                                           :unitType :day
+                                                                           :seats 1})
+                                                 (resource-attrs-include? timeslot)))) timeslot-resources))))
 
-    (let [customerId #uuid "33be021c-18d5-44df-bfe4-c5d929807b04"
-          {:keys [status body]}
-          (client/post
-           "http://localhost:8086/bookings/initiate"
-           {:form-params {:marketplaceId marketplaceId
-                          :customerId customerId
-                          :refId refId
-                          :initialStatus :paid
-                          :start #inst "2016-09-19T00:00:00.000Z"
-                          :end #inst "2016-09-20T00:00:00.000Z"}
-            :as :transit+msgpack
-            :accept :transit+msgpack
-            :content-type :transit+msgpack})]
-
-
-      (is (= 201 status))
-      (is (json-api-response? body))
-      (is (json-api-resource? (:data body)))
-      (is (resource-attrs-include? {:customerId customerId
-                                    :status :paid
-                                    :seats 1
-                                    :start #inst "2016-09-19T00:00:00.000Z",
-                                    :end #inst "2016-09-20T00:00:00.000Z"}
-                                   (get-in body [:data :attributes]))))
-
-    (let [customerId #uuid "33be021c-18d5-44df-bfe4-c5d929807b04"
-          {:keys [status body]}
-          (client/post
-           "http://localhost:8086/bookings/initiate"
-           {:form-params {:marketplaceId marketplaceId
-                          :customerId customerId
-                          :refId refId
-                          :initialStatus :paid
-                          :start #inst "2016-09-23T00:00:00.000Z",
-                          :end #inst "2016-09-25T00:00:00.000Z",
-                          }
-            :as :transit+msgpack
-            :accept :transit+msgpack
-            :content-type :transit+msgpack})]
+  (let [customerId #uuid "33be021c-18d5-44df-bfe4-c5d929807b04"
+        {:keys [status body]}
+        (client/post
+         "http://localhost:8086/bookings/initiate"
+         {:form-params {:marketplaceId (fixed-uuid :marketplaceId)
+                        :customerId (fixed-uuid :customerId)
+                        :refId (fixed-uuid :refId)
+                        :initialStatus :paid
+                        :start #inst "2016-09-19T00:00:00.000Z"
+                        :end #inst "2016-09-20T00:00:00.000Z"}
+          :as :transit+msgpack
+          :accept :transit+msgpack
+          :content-type :transit+msgpack})]
 
 
-      (is (= 201 status))
-      (is (json-api-response? body))
-      (is (json-api-resource? (:data body)))
-      (is (resource-attrs-include? {:customerId customerId
-                                    :status :paid
-                                    :seats 1
-                                    :start #inst "2016-09-23T00:00:00.000Z",
-                                    :end #inst "2016-09-25T00:00:00.000Z"}
-                                   (get-in body [:data :attributes]))))
+    (is (= 201 status))
+    (is (json-api-response? body))
+    (is (json-api-resource? (:data body)))
+    (is (resource-attrs-include? {:customerId (fixed-uuid :customerId)
+                                  :status :paid
+                                  :seats 1
+                                  :start #inst "2016-09-19T00:00:00.000Z",
+                                  :end #inst "2016-09-20T00:00:00.000Z"}
+                                 (get-in body [:data :attributes]))))
 
-    (let [{:keys [status body]} (client/get
+  (let [{:keys [status body]}
+        (client/post
+         "http://localhost:8086/bookings/initiate"
+         {:form-params {:marketplaceId (fixed-uuid :marketplaceId)
+                        :customerId (fixed-uuid :customerId)
+                        :refId (fixed-uuid :refId)
+                        :initialStatus :paid
+                        :start #inst "2016-09-23T00:00:00.000Z",
+                        :end #inst "2016-09-25T00:00:00.000Z",
+                        }
+          :as :transit+msgpack
+          :accept :transit+msgpack
+          :content-type :transit+msgpack})]
+
+
+    (is (= 201 status))
+    (is (json-api-response? body))
+    (is (json-api-resource? (:data body)))
+    (is (resource-attrs-include? {:customerId (fixed-uuid :customerId)
+                                  :status :paid
+                                  :seats 1
+                                  :start #inst "2016-09-23T00:00:00.000Z",
+                                  :end #inst "2016-09-25T00:00:00.000Z"}
+                                 (get-in body [:data :attributes]))))
+
+  (let [{:keys [status body]} (client/get
                                "http://localhost:8086/timeslots/query"
-                               {:query-params {:marketplaceId marketplaceId
-                                              :refId refId
-                                              :start "2016-09-19T00:00:00.000Z"
-                                              :end "2016-09-26T00:00:00.000Z"}
+                               {:query-params {:marketplaceId (fixed-uuid :marketplaceId)
+                                               :refId (fixed-uuid :refId)
+                                               :start "2016-09-19T00:00:00.000Z"
+                                               :end "2016-09-26T00:00:00.000Z"}
                                 :as :transit+msgpack
                                 :accept :transit+msgpack})]
 
-      (is (= 200 status))
-      (is (json-api-response? body))
-      (is (every? json-api-resource? (:data body)))
+    (is (= 200 status))
+    (is (json-api-response? body))
+    (is (every? json-api-resource? (:data body)))
 
-      (let [timeslots (map timeslot [#inst "2016-09-20T00:00:00.000Z"
-                                     #inst "2016-09-21T00:00:00.000Z"
-                                     #inst "2016-09-22T00:00:00.000Z"
-                                     #inst "2016-09-25T00:00:00.000Z"])
-            timeslot-resources (map vector timeslots (:data body))]
+    (let [timeslots (map timeslot [#inst "2016-09-20T00:00:00.000Z"
+                                   #inst "2016-09-21T00:00:00.000Z"
+                                   #inst "2016-09-22T00:00:00.000Z"
+                                   #inst "2016-09-25T00:00:00.000Z"])
+          timeslot-resources (map vector timeslots (:data body))]
 
-        (is (= (count timeslots) (count (:data body))))
-        (is (every? (map (fn [[timeslot res]] (and (resource-attrs-include? {:refId refId
-                                                                             :unitType :day
-                                                                             :seats 1})
-                                                   (resource-attrs-include? timeslot)))) timeslot-resources))))))
+      (is (= (count timeslots) (count (:data body))))
+      (is (every? (map (fn [[timeslot res]] (and (resource-attrs-include? {:refId (fixed-uuid :refId)
+                                                                           :unitType :day
+                                                                           :seats 1})
+                                                 (resource-attrs-include? timeslot)))) timeslot-resources)))))
 
 (comment
   (config/config-harmony-api :test)
