@@ -34,15 +34,6 @@
                       (f)
                       (teardown)))
 
-(defn- contains-many? [m & ks]
-  (every? #(contains? m %) ks))
-
-(defn- submap? [submap supermap]
-  (= submap (select-keys supermap (keys submap))))
-
-(defn- resource-attrs-include? [expected attrs]
-  (submap? expected attrs))
-
 (defn- post [endpoint body]
   (client/post (str "http://localhost:8086" endpoint)
                {:form-params body
@@ -71,12 +62,11 @@
                                      :refId (fixed-uuid :refId)
                                      :authorId (fixed-uuid :authorId)})]
     (is (= 201 status))
-    (is (resource-attrs-include? {:marketplaceId (fixed-uuid :marketplaceId)
-                                  :refId (fixed-uuid :refId)
-                                  :authorId (fixed-uuid :authorId)
-                                  :unitType :day
-                                  }
-                                 (get-in body [:data :attributes])))))
+    (is (= {:marketplaceId (fixed-uuid :marketplaceId)
+            :refId (fixed-uuid :refId)
+            :authorId (fixed-uuid :authorId)
+            :unitType :day}
+           (select-keys (get-in body [:data :attributes]) [:marketplaceId :refId :authorId :unitType])))))
 
 (deftest prevent-bookable-double-create
   (let [{:keys [status body]} (post "/bookables/create"
@@ -113,13 +103,12 @@
 
 
     (is (= 201 status))
-    (is (resource-attrs-include? {:customerId (fixed-uuid :customerId)
-                                  :status :paid
-                                  :seats 1
-                                  :start #inst "2016-09-19T00:00:00.000Z",
-                                  :end #inst "2016-09-20T00:00:00.000Z",
-                                  }
-                                 (get-in body [:data :attributes])))))
+    (is (= {:customerId (fixed-uuid :customerId)
+            :status :paid
+            :seats 1
+            :start #inst "2016-09-19T00:00:00.000Z"
+            :end #inst "2016-09-20T00:00:00.000Z"}
+           (select-keys (get-in body [:data :attributes]) [:customerId :status :seats :start :end])))))
 
 (deftest show-timeslots
   (let [{:keys [status body]} (post "/bookables/create"
@@ -144,13 +133,14 @@
                                    #inst "2016-09-23T00:00:00.000Z"
                                    #inst "2016-09-24T00:00:00.000Z"
                                    #inst "2016-09-25T00:00:00.000Z"])
-          timeslot-resources (map vector timeslots (:data body))]
+          actual   (map #(select-keys (:attributes %) [:refId :unitType :seats :start :end]) (:data body))
+          expected (map #(merge % {:refId (fixed-uuid :refId)
+                                   :unitType :day
+                                   :seats 1}) timeslots)]
 
       (is (= (count timeslots) (count (:data body))))
-      (is (every? (map (fn [[timeslot res]] (and (resource-attrs-include? {:refId (fixed-uuid :refId)
-                                                                           :unitType :day
-                                                                           :seats 1})
-                                                 (resource-attrs-include? timeslot)))) timeslot-resources))))
+      (is (= expected actual))))
+
 
   (let [{:keys [status body]} (post "/bookings/initiate"
                                     {:marketplaceId (fixed-uuid :marketplaceId)
@@ -162,12 +152,12 @@
 
 
     (is (= 201 status))
-    (is (resource-attrs-include? {:customerId (fixed-uuid :customerId)
-                                  :status :paid
-                                  :seats 1
-                                  :start #inst "2016-09-19T00:00:00.000Z",
-                                  :end #inst "2016-09-20T00:00:00.000Z"}
-                                 (get-in body [:data :attributes]))))
+    (is (= {:customerId (fixed-uuid :customerId)
+            :status :paid
+            :seats 1
+            :start #inst "2016-09-19T00:00:00.000Z",
+            :end #inst "2016-09-20T00:00:00.000Z"}
+           (select-keys (get-in body [:data :attributes]) [:customerId :status :seats :start :end]))))
 
   (let [{:keys [status body]} (post "/bookings/initiate"
          {:marketplaceId (fixed-uuid :marketplaceId)
@@ -179,12 +169,12 @@
 
 
     (is (= 201 status))
-    (is (resource-attrs-include? {:customerId (fixed-uuid :customerId)
-                                  :status :paid
-                                  :seats 1
-                                  :start #inst "2016-09-23T00:00:00.000Z",
-                                  :end #inst "2016-09-25T00:00:00.000Z"}
-                                 (get-in body [:data :attributes]))))
+    (is (=  {:customerId (fixed-uuid :customerId)
+             :status :paid
+             :seats 1
+             :start #inst "2016-09-23T00:00:00.000Z"
+             :end #inst "2016-09-25T00:00:00.000Z"}
+            (select-keys (get-in body [:data :attributes]) [:customerId :status :seats :start :end]))))
 
   (let [{:keys [status body]} (get "/timeslots/query"
                                {:marketplaceId (fixed-uuid :marketplaceId)
@@ -198,13 +188,13 @@
                                    #inst "2016-09-21T00:00:00.000Z"
                                    #inst "2016-09-22T00:00:00.000Z"
                                    #inst "2016-09-25T00:00:00.000Z"])
-          timeslot-resources (map vector timeslots (:data body))]
+          actual   (map #(select-keys (:attributes %) [:refId :unitType :seats :start :end]) (:data body))
+          expected (map #(merge % {:refId (fixed-uuid :refId)
+                                   :unitType :day
+                                   :seats 1}) timeslots)]
 
       (is (= (count timeslots) (count (:data body))))
-      (is (every? (map (fn [[timeslot res]] (and (resource-attrs-include? {:refId (fixed-uuid :refId)
-                                                                           :unitType :day
-                                                                           :seats 1})
-                                                 (resource-attrs-include? timeslot)))) timeslot-resources)))))
+      (is (= expected actual)))))
 
 (comment
   (config/config-harmony-api :test)
