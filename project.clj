@@ -12,6 +12,10 @@
                  [io.aviso/config "0.1.13"]
                  [pedestal-api "0.3.0"]
                  [clj-time "0.12.0"]
+                 [com.layerware/hugsql "0.4.7"]
+                 [mysql/mysql-connector-java "5.1.39"]
+                 [org.clojure/java.jdbc "0.6.1"]
+                 [hikari-cp "1.7.3"]
 
                  ;; Logging integration
                  [ch.qos.logback/logback-classic "1.1.7" :exclusions [org.slf4j/slf4j-api]]

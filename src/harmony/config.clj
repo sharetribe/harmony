@@ -9,8 +9,21 @@
   {:port schema/Int
    :dev-mode? schema/Bool})
 
+(schema/defschema ConnectionPool
+  {:username schema/Str
+   :password schema/Str
+   :database-name schema/Str
+   :server-name schema/Str
+   :port-number schema/Int
+   :connection-timeout schema/Int
+   :validation-timeout schema/Int
+   :idle-timeout schema/Int
+   :minimum-idle schema/Int
+   :maximum-pool-size schema/Int})
+
 (schema/defschema HarmonyAPI
-  {:web-server WebServer})
+  {:web-server WebServer
+   :connection-pool ConnectionPool})
 
 
 (defn config-harmony-api
@@ -28,4 +41,7 @@
 
 (defn web-server-conf [conf]
   (:web-server conf))
+
+(defn db-conn-pool-conf [conf]
+  (:connection-pool conf))
 
