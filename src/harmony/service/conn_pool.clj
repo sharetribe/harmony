@@ -9,10 +9,10 @@
   component/Lifecycle
   (start [component]
     (if-not datasource
-      (assoc component
-             :datasource
-             (hikari/make-datasource
-              (merge pool-config {:adapter "mysql"})))
+      (let [cp (hikari/make-datasource
+                (merge pool-config {:adapter "mysql"}))]
+        (log/info :connection-pool :started)
+        (assoc component :datasource cp))
       component))
   (stop [component]
     (if datasource

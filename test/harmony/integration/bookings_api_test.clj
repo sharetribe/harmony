@@ -25,7 +25,8 @@
 
   (alter-var-root
    #'test-system
-   (constantly (system/harmony-api (config/config-harmony-api :test))))
+   (constantly (dissoc (system/harmony-api (config/config-harmony-api :test))
+                       :db-conn-pool)))
 
   (alter-var-root #'test-system component/start))
 

@@ -1,5 +1,6 @@
 (ns user
   (:require [reloaded.repl :refer [system init start stop go clear]]
+            [com.stuartsierra.component :as component]
 
             [harmony.util.log :as log]
             [harmony.config :as config]
