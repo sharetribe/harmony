@@ -5,3 +5,11 @@ services:
     ports:
       - "8085:8085"
     command: ["./docker/startup.sh"]
+  db:
+    image: mysql:5.7
+    environment:
+      - MYSQL_ROOT_PASSWORD=harmony-root
+    volumes:
+      - ~/.sharetribe/harmony-mysql-data:/var/lib/mysql
+    ports:
+      - "13306:3306"
