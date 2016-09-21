@@ -4,7 +4,7 @@
  :connection-pool
  {:username #config/prop ["DB_USER" "user"]
   :password #config/prop ["DB_PASSWORD" "harmony-root"]
-  :database-name #config/prop ["DB_NAME" "harmony_production"]
+  :database-name #config/prop ["DB_NAME" "harmony_db"]
   :server-name #config/prop ["DB_HOST" "127.0.0.1"]
   :port-number #config/prop ["DB_PORT" 3306]
   :connection-timeout #config/prop ["DB_CONN_TIMEOUT" 30000]

@@ -12,10 +12,13 @@
                  [io.aviso/config "0.1.13"]
                  [pedestal-api "0.3.0"]
                  [clj-time "0.12.0"]
-                 [com.layerware/hugsql "0.4.7"]
+
+                 ;; Database handling
                  [mysql/mysql-connector-java "5.1.39"]
                  [org.clojure/java.jdbc "0.6.1"]
+                 [com.layerware/hugsql "0.4.7"]
                  [hikari-cp "1.7.3"]
+                 [migratus "0.8.28"]
 
                  ;; Logging integration
                  [ch.qos.logback/logback-classic "1.1.7" :exclusions [org.slf4j/slf4j-api]]
@@ -27,6 +30,18 @@
   :uberjar-name "sharetribe-harmony.jar"
   :source-paths ["src"]
   :resource-paths ["resources"]
+
+  ;; Add Migratus plugin and config here to get started. This needs to
+  ;; be handled in production differently.
+  :plugins [[migratus-lein "0.4.1"]]
+  :migratus {:store :database
+             :migration-dir "migrations"
+             :db {:classname "com.mysql.jdbc.Driver"
+                  :subprotocol "mysql"
+                  :subname "//127.0.0.1:13306/harmony_db?createDatabaseIfNotExist=true"
+                  :user "root"
+                  :password "harmony-root"}}
+
   :profiles {:uberjar {:aot :all}
              :dev {:dependencies [[reloaded.repl "0.2.2"]
                                   [clj-http "2.2.0"]]

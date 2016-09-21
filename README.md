@@ -23,15 +23,13 @@ First, start up just the database service. In the project root:
 docker-compose up db
 ```
 
-Next, run a script to provision an empty database:
+Next, run migrations to provision an empty database:
 
 ```
-mysql -u root -p -h 127.0.0.1 --port 13306 < setup_dev_db.sql
+lein migratus migrate
 ```
 
-The mysql cli will prompt for root password. The default password is:
-`harmony-root`. After the database is set up you can now start the API
-service:
+After the database is set up you can now start the API service:
 
 ```
 docker-compose up api
