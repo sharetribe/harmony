@@ -35,7 +35,7 @@
                       (f)
                       (teardown)))
 
-(defn- post [endpoint body]
+(defn- do-post [endpoint body]
   (client/post (str "http://localhost:8086" endpoint)
                {:form-params body
                 :as :transit+msgpack
@@ -43,7 +43,7 @@
                 :content-type :transit+msgpack
                 :throw-exceptions false}))
 
-(defn- get [endpoint query]
+(defn- do-get [endpoint query]
   (client/get (str "http://localhost:8086" endpoint)
               {:query-params query
                :as :transit+msgpack
@@ -58,7 +58,7 @@
    :end (plus start 1)})
 
 (deftest create-bookable
-  (let [{:keys [status body]} (post "/bookables/create"
+  (let [{:keys [status body]} (do-post "/bookables/create"
                                     {:marketplaceId (fixed-uuid :marketplaceId)
                                      :refId (fixed-uuid :refId)
                                      :authorId (fixed-uuid :authorId)})]
@@ -70,11 +70,11 @@
            (select-keys (get-in body [:data :attributes]) [:marketplaceId :refId :authorId :unitType])))))
 
 (deftest prevent-bookable-double-create
-  (let [status-first (:status (post "/bookables/create"
+  (let [status-first (:status (do-post "/bookables/create"
                                     {:marketplaceId (fixed-uuid :marketplaceId)
                                      :refId (fixed-uuid :refId)
                                      :authorId (fixed-uuid :authorId)}))
-        status-second (:status (post "/bookables/create"
+        status-second (:status (do-post "/bookables/create"
                                      {:marketplaceId (fixed-uuid :marketplaceId)
                                       :refId (fixed-uuid :refId)
                                       :authorId (fixed-uuid :authorId)}))]
@@ -84,11 +84,11 @@
 
 
 (deftest initiate-booking
-  (let [_ (post "/bookables/create"
+  (let [_ (do-post "/bookables/create"
                 {:marketplaceId (fixed-uuid :marketplaceId)
                  :refId (fixed-uuid :refId)
                  :authorId (fixed-uuid :authorId)})
-        {:keys [status body]} (post "/bookings/initiate"
+        {:keys [status body]} (do-post "/bookings/initiate"
                                     {:marketplaceId (fixed-uuid :marketplaceId)
                                      :customerId (fixed-uuid :customerId)
                                      :refId (fixed-uuid :refId)
@@ -106,11 +106,11 @@
            (select-keys (get-in body [:data :attributes]) [:customerId :status :seats :start :end])))))
 
 (deftest query-timeslots
-  (let [_ (post "/bookables/create"
+  (let [_ (do-post "/bookables/create"
                 {:marketplaceId (fixed-uuid :marketplaceId)
                  :refId (fixed-uuid :refId)
                  :authorId (fixed-uuid :authorId)})
-        {:keys [status body]} (get "/timeslots/query"
+        {:keys [status body]} (do-get "/timeslots/query"
                                    {:marketplaceId (fixed-uuid :marketplaceId)
                                     :refId (fixed-uuid :refId)
                                     :start "2016-09-19T00:00:00.000Z"
@@ -133,25 +133,25 @@
     (is (= expected actual))))
 
 (deftest query-reserved-timeslots
-  (let [_ (post "/bookables/create"
+  (let [_ (do-post "/bookables/create"
                 {:marketplaceId (fixed-uuid :marketplaceId)
                  :refId (fixed-uuid :refId)
                  :authorId (fixed-uuid :authorId)})
-        _ (post "/bookings/initiate"
+        _ (do-post "/bookings/initiate"
                 {:marketplaceId (fixed-uuid :marketplaceId)
                  :customerId (fixed-uuid :customerId)
                  :refId (fixed-uuid :refId)
                  :initialStatus :paid
                  :start #inst "2016-09-19T00:00:00.000Z"
                  :end #inst "2016-09-20T00:00:00.000Z"})
-        _ (post "/bookings/initiate"
+        _ (do-post "/bookings/initiate"
                 {:marketplaceId (fixed-uuid :marketplaceId)
                  :customerId (fixed-uuid :customerId)
                  :refId (fixed-uuid :refId)
                  :initialStatus :paid
                  :start #inst "2016-09-23T00:00:00.000Z"
                  :end #inst "2016-09-25T00:00:00.000Z"})
-        {:keys [status body]} (get "/timeslots/query"
+        {:keys [status body]} (do-get "/timeslots/query"
                                    {:marketplaceId (fixed-uuid :marketplaceId)
                                     :refId (fixed-uuid :refId)
                                     :start "2016-09-19T00:00:00.000Z"
@@ -169,10 +169,3 @@
     (is (= (count free-timeslots) (count (:data body))))
     (is (= expected actual))))
 
-(comment
-  (config/config-harmony-api :test)
-  (setup)
-  (teardown)
-  test-system
-  (client/get "https://www.google.com")
-  )

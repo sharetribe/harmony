@@ -12,6 +12,7 @@
                  [io.aviso/config "0.1.13"]
                  [pedestal-api "0.3.0"]
                  [clj-time "0.12.0"]
+                 [danlentz/clj-uuid "0.1.6"]
 
                  ;; Database handling
                  [mysql/mysql-connector-java "5.1.39"]
