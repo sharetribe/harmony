@@ -75,3 +75,19 @@
   (if (seq args)
     (reduce (fn [r [k v]] (assoc r (apply f k args) v)) {} m)
     (reduce (fn [r [k v]] (assoc r (f k) v)) {} m)))
+
+(defn map-kvs
+  "Update the keys and/or values in map m by applying function f over
+  them. f takes the old key and old value as parameters + any supplied
+  args and returns a tuple of [new-key new-val]."
+  [m f & args]
+  (if (seq args)
+    (transduce (map (fn [[k v]] (apply f k v args)))
+               (completing conj! persistent!)
+               (transient {})
+               m)
+    (transduce (map (fn [[k v]] (f k v)))
+               (completing conj! persistent!)
+               (transient {})
+               m)))
+

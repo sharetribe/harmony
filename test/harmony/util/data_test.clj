@@ -95,3 +95,11 @@
 
   (is (= {6 :3 7 :6}
          (map-keys {1 :3 2 :6} + 5))))
+
+(deftest test-map-kvs
+  (is (= {"a" 2 "b" 3}
+         (map-kvs {:a 1 :b 2} (fn [k v] [(name k) (+ 1 v)]))))
+  (is (= {"a" 6 "b" 7}
+         (map-kvs {:a 1 :b 2}
+                  (fn [k v p] [(name k) (+ p v)])
+                  5))))
