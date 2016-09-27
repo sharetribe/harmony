@@ -21,7 +21,7 @@
              (assoc :body (:body (http/edn-response body))))
          response)))))
 
-(def serialisation-interceptors
+(def serialization-interceptors
   {"application/json" http/json-body
    "application/edn" edn-body
    "application/transit+json" http/transit-json-body
@@ -43,7 +43,7 @@
   ([supported-type-strs opts-map]
    (:enter (pcn/negotiate-content supported-type-strs opts-map))))
 
-(def negoatiate-response
+(def negotiate-response
   (sw.doc/annotate
    {:produces supported-types-in-order
     :responses {406 {}}}
@@ -58,7 +58,7 @@
                                                     :body "Not Acceptable"})))})
 
      :leave (fn [{:keys [request] :as ctx}]
-              (if-let [i (get serialisation-interceptors (get-in request [:accept :field]))]
+              (if-let [i (get serialization-interceptors (get-in request [:accept :field]))]
                 (update ctx ::interceptor.chain/stack conj i)
                 ctx))})))
 

@@ -144,7 +144,7 @@
 
 
 (def api-interceptors
-  [content-negotiation/negoatiate-response
+  [content-negotiation/negotiate-response
    api/error-responses
    (api/body-params)
    api/common-body
