@@ -7,3 +7,9 @@ machine:
     DB_PORT: 3306
   java:
     version: oraclejdk8
+
+test:
+  override:
+    - lein trampoline test2junit
+  post:
+    - cp -R test-results $CIRCLE_TEST_REPORTS

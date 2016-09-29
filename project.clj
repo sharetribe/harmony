@@ -31,6 +31,7 @@
   :uberjar-name "sharetribe-harmony.jar"
   :source-paths ["src"]
   :resource-paths ["resources"]
+  :clean-targets ^{:protect false} [:target-path :compile-path "test-results" "build.xml"]
 
   ;; Add Migratus plugin and config here for dev setup. Production and
   ;; tests use migrations configuration provided in config files.
@@ -47,4 +48,6 @@
              :dev {:dependencies [[reloaded.repl "0.2.2"]
                                   [clj-http "2.2.0"]]
                    :source-paths ["dev"]
-                   :main user}})
+                   :main user
+                   :plugins [[test2junit "1.2.2"]]
+                   :test2junit-output-dir "test-results"}})
