@@ -5,7 +5,7 @@
  :connection-pool
  {:username #config/prop ["DB_USER" "root"]
   :password #config/prop ["DB_PASSWORD" "harmony-root"]
-  :database-name "harmony_test_db"
+  :database-name #config/prop ["DB_NAME" "harmony_test_db"]
   :server-name #config/prop ["DB_HOST" "127.0.0.1"]
   :port-number #config/prop ["DB_PORT" 13306]
   :connection-timeout #config/prop ["DB_CONN_TIMEOUT" 30000]
@@ -18,6 +18,12 @@
  {:store :database
   :migration-dir "migrations"
   :db {:subprotocol "mysql"
-       :subname "//127.0.0.1:13306/harmony_test_db?createDatabaseIfNotExist=true"
+       :subname #config/join ["//"
+                              #config/prop ["DB_HOST" "127.0.0.1"]
+                              ":"
+                              #config/prop ["DB_PORT" "13306"]
+                              "/"
+                              #config/prop ["DB_NAME" "harmony_test_db"]
+                              "?createDatabaseIfNotExist=true"]
        :user #config/prop ["DB_USER" "root"]
        :password #config/prop ["DB_PASSWORD" "harmony-root"]}}}

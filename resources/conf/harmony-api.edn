@@ -18,6 +18,11 @@
  {:store :database
   :migration-dir "migrations"
   :db {:subprotocol "mysql"
-       :subname "//127.0.0.1:13306/harmony_db"
+       :subname #config/join ["//"
+                              #config/prop ["DB_HOST" "127.0.0.1"]
+                              ":"
+                              #config/prop ["DB_PORT" "3306"]
+                              "/"
+                              #config/prop ["DB_NAME" "harmony_db"]]
        :user #config/prop ["DB_USER" "root"]
        :password #config/prop ["DB_PASSWORD" "harmony-root"]}}}
