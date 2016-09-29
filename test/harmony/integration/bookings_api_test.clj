@@ -84,7 +84,7 @@
     (is (= 409 status-second))))
 
 
-#_(deftest initiate-booking
+(deftest initiate-booking
   (let [_ (do-post "/bookables/create"
                 {:marketplaceId (fixed-uuid :marketplaceId)
                  :refId (fixed-uuid :refId)

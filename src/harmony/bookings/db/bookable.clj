@@ -84,7 +84,8 @@
         b (merge bookable {:id bookable-id :activePlanId plan-id})]
     (jdbc/with-db-transaction [tx db]
       (insert-bookable tx (format-insert-data b))
-      (insert-plan tx (format-insert-data p)))))
+      (insert-plan tx (format-insert-data p)))
+    [bookable-id plan-id]))
 
 (defn fetch-bookable
   "Fetch a bookable by marketplaceId and refId."
@@ -96,6 +97,17 @@
      :marketplaceId (uuid->sorted-bytes marketplaceId)
      :refId (uuid->sorted-bytes refId)})
    #{:unitType}))
+
+(defn fetch-bookable-id
+  "Fetch the id of a bookable by marketplaceId and refId. Return nil
+  if no match."
+  [db {:keys [marketplaceId refId]}]
+  (when-let [b (bookable-by-ref-spec-cols
+                db
+                {:cols ["id"]
+                 :marketplaceId (uuid->sorted-bytes marketplaceId)
+                 :refId (uuid->sorted-bytes refId)})]
+    (-> b :id sorted-bytes->uuid)))
 
 (defn contains-bookable?
   "Check if a bookable exists for the given marketplaceId and refId."
@@ -126,6 +138,23 @@
       {:bookable (dissoc b :activePlanId)
        :active-plan (fetch-plan tx {:id (:activePlanId b)})}
       {:bookable nil :active-plan nil})))
+
+(defn create-booking
+  "Create a new booking"
+  [db booking]
+  (let [booking-id (uuid/v1)]
+    (insert-booking db (format-insert-data (assoc booking :id booking-id)))
+    booking-id))
+
+(defn fetch-booking
+  "Fetch a booking by id"
+  [db {:keys [id]}]
+  (format-query-result
+   (booking-by-id-spec-cols
+    db
+    {:cols ["id" "marketplace_id" "bookable_id" "customer_id" "status" "seats" "start" "end"]
+     :id (uuid->sorted-bytes id)})
+   #{:status}))
 
 (comment
   (def m-id (uuid/v1))

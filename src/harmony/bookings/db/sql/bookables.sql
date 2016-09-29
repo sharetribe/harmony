@@ -24,3 +24,13 @@ values (:id, :marketplaceId, :bookableId, :seats, :planMode)
 -- :doc Get a plan by id
 select :i*:cols from plans
 where id = :id
+
+-- :name insert-booking :! :n
+-- :Doc Insert a new booking
+insert into bookings (id, marketplace_id, bookable_id, customer_id, status, seats, start, end)
+values (:id, :marketplaceId, :bookableId, :customerId, :status, :seats, :start, :end)
+
+-- :name booking-by-id-spec-cols :? :1
+-- :doc Get a booking by id
+select :i*:cols from bookings
+where id = :id
