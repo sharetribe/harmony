@@ -21,18 +21,6 @@
      :allows [#'Allow]
      :blocks [#'Block]}}))
 
-;; (defapiresource Bookable :bookable
-;;   {:marketplaceId s/Uuid
-;;    :refId s/Uuid
-;;    :authorId s/Uuid
-;;    :unitType (s/enum :day :time)}
-;;   {:activePlan Plan
-;;    :plans [Plan]
-;;    :bookings [Booking]
-;;    :allows [Allow]
-;;    :blocks [Block]})
-
-
 (def Plan
   (resource/api-resource
    {:type :plan
