@@ -32,8 +32,8 @@
   :source-paths ["src"]
   :resource-paths ["resources"]
 
-  ;; Add Migratus plugin and config here to get started. This needs to
-  ;; be handled in production differently.
+  ;; Add Migratus plugin and config here for dev setup. Production and
+  ;; tests use migrations configuration provided in config files.
   :plugins [[migratus-lein "0.4.1"]]
   :migratus {:store :database
              :migration-dir "migrations"

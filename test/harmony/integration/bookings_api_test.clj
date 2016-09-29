@@ -1,11 +1,12 @@
 (ns harmony.integration.bookings-api-test
   (:require [clojure.test :refer :all]
-            [harmony.system :as system]
             [com.stuartsierra.component :as component]
             [clj-http.client :as client]
-            [harmony.config :as config]
             [clj-time.core :as t]
-            [clj-time.coerce :as c]))
+            [clj-time.coerce :as c]
+            [harmony.integration.db-test-util :as db-test-util]
+            [harmony.config :as config]
+            [harmony.system :as system]))
 
 (def fixed-uuid
   (let [ids-holder (atom {})]
@@ -21,12 +22,12 @@
     (alter-var-root #'test-system component/stop)))
 
 (defn- setup []
-  (teardown)
-
-  (alter-var-root
-   #'test-system
-   (constantly (dissoc (system/harmony-api (config/config-harmony-api :test))
-                       :db-conn-pool)))
+  (let [conf (config/config-harmony-api :test)]
+    (teardown)
+    (db-test-util/reset-test-db (config/migrations-conf conf))
+    (alter-var-root
+     #'test-system
+     (constantly (system/harmony-api conf))))
 
   (alter-var-root #'test-system component/start))
 
@@ -83,7 +84,7 @@
     (is (= 409 status-second))))
 
 
-(deftest initiate-booking
+#_(deftest initiate-booking
   (let [_ (do-post "/bookables/create"
                 {:marketplaceId (fixed-uuid :marketplaceId)
                  :refId (fixed-uuid :refId)
@@ -105,7 +106,7 @@
             :end #inst "2016-09-20T00:00:00.000Z"}
            (select-keys (get-in body [:data :attributes]) [:customerId :status :seats :start :end])))))
 
-(deftest query-timeslots
+#_(deftest query-timeslots
   (let [_ (do-post "/bookables/create"
                 {:marketplaceId (fixed-uuid :marketplaceId)
                  :refId (fixed-uuid :refId)
@@ -132,7 +133,7 @@
     (is (= (count free-timeslots) (count (:data body))))
     (is (= expected actual))))
 
-(deftest query-reserved-timeslots
+#_(deftest query-reserved-timeslots
   (let [_ (do-post "/bookables/create"
                 {:marketplaceId (fixed-uuid :marketplaceId)
                  :refId (fixed-uuid :refId)
