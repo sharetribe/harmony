@@ -13,7 +13,7 @@
    :db-conn-pool (service.conn-pool/new-connection-pool (config/db-conn-pool-conf config))
    :bookings-api (component/using
                   (bookings.api/new-bookings-api {})
-                  {:db :db})
+                  {:db :db-conn-pool})
    :web-server (component/using
                 (service.web-server/new-web-server (config/web-server-conf config))
                 {:routes :bookings-api})))

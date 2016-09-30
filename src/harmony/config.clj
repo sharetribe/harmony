@@ -21,9 +21,18 @@
    :minimum-idle schema/Int
    :maximum-pool-size schema/Int})
 
+(schema/defschema Migrations
+  {:store schema/Keyword
+   :migration-dir schema/Str
+   :db {:subprotocol schema/Str
+        :subname schema/Str
+        :user schema/Str
+        :password schema/Str}})
+
 (schema/defschema HarmonyAPI
   {:web-server WebServer
-   :connection-pool ConnectionPool})
+   :connection-pool ConnectionPool
+   :migrations Migrations})
 
 
 (defn config-harmony-api
@@ -45,3 +54,5 @@
 (defn db-conn-pool-conf [conf]
   (:connection-pool conf))
 
+(defn migrations-conf [conf]
+  (:migrations conf))

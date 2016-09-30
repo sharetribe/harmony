@@ -1,11 +1,13 @@
 (ns harmony.bookings.service
   (:require [harmony.bookings.store :as store]
+            [harmony.bookings.db.bookable :as db.bookable]
             [clj-time.core :as t]
             [clj-time.periodic :as periodic]
             [clj-time.coerce :as coerce]))
 
 (defn- bookable-defaults [m-id ref-id author-id]
-  (let [plan {:seats 1
+  (let [plan {:marketplaceId m-id
+              :seats 1
               :planMode :available}
         bookable {:marketplaceId m-id
                   :refId ref-id
@@ -18,22 +20,23 @@
 (defn create-bookable
   [db create-cmd]
   (let [{:keys [marketplaceId refId authorId]} create-cmd]
-    (when-not (store/contains-bookable? db {:m-id marketplaceId :ref-id refId})
-      (let [{:keys [bookable plan]} (bookable-defaults marketplaceId refId authorId)
-            _ (store/insert-bookable db bookable plan)
-            {:keys [bookable active-plan]} (store/fetch-bookable
-                                            db
-                                            {:m-id marketplaceId :ref-id refId})]
+    (when-not (db.bookable/contains-bookable?
+               db
+               {:marketplaceId marketplaceId :refId refId})
+      (let [{:keys [bookable plan]}
+            (bookable-defaults marketplaceId refId authorId)
+            _ (db.bookable/create-bookable db bookable plan)
+            {:keys [bookable active-plan]}
+            (db.bookable/fetch-bookable-with-plan db {:marketplaceId marketplaceId :refId refId})]
         (assoc bookable :activePlan active-plan)))))
 
 (defn fetch-bookable
   [db m-id ref-id]
-  (when-let [{:keys [bookable active-plan]} (store/fetch-bookable
-                                             db
-                                             {:m-id m-id :ref-id ref-id})]
+  (when-let [{:keys [bookable active-plan]}
+             (db.bookable/fetch-bookable-with-plan
+              db
+              {:marketplaceId m-id :refId ref-id})]
     (assoc bookable :activePlan active-plan)))
-
-
 
 
 (defn- midnight-date-time [inst]

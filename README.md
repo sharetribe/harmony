@@ -2,6 +2,11 @@
 
 The Sharetribe Harmony backend for marketplace transaction functionalities.
 
+## Requirements
+
+* MySQL 5.7
+* This component is designed to be deployed to AWS using Docker and Convox but AWS is not a hard requirement.
+
 ## Starting a dockerized environment on localhost
 
 This instruction will describe how to set up a local Harmony API on
@@ -23,15 +28,13 @@ First, start up just the database service. In the project root:
 docker-compose up db
 ```
 
-Next, run a script to provision an empty database:
+Next, run migrations to provision an empty database:
 
 ```
-mysql -u root -p -h 127.0.0.1 --port 13306 < setup_dev_db.sql
+lein migratus migrate
 ```
 
-The mysql cli will prompt for root password. The default password is:
-`harmony-root`. After the database is set up you can now start the API
-service:
+After the database is set up you can now start the API service:
 
 ```
 docker-compose up api
@@ -83,6 +86,20 @@ The database service data volume is mounted in the host OS to
 contents are persisted even across removing and rebuilding the MySQL
 db container. To completely clean up your development database just
 delete the aforementioned directory in your home directory.
+
+## Testing
+
+Integrations tests (test/harmony/integration/) run against a live
+MySQL database and a live web server. By default, the web server is
+setup to run at localhost:8086. It assumes this port is available for
+binding.
+
+The default configuration also assumes a MySQL server running at
+127.0.0.1:13306 (the setup provided in docker-compose
+configuration). To run the integration tests locally you need to have
+the docker container for db running. By default, the tests use
+harmony_test_db database. The contents of this DB are refreshed after
+each test using the Migratus migrations (resources/migrations/).
 
 ## License and Copyright
 

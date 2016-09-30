@@ -5,12 +5,19 @@
             [harmony.util.log :as log]
             [harmony.config :as config]))
 
+(def fixed-pool-config
+  {:adapter "mysql"
+   :cache-prep-stmts true
+   :prep-stmt-cache-size 250
+   :prep-stmt-cache-sql-limit 2048
+   :use-server-prep-stmts true})
+
 (defrecord ConnPool [datasource pool-config]
   component/Lifecycle
   (start [component]
     (if-not datasource
       (let [cp (hikari/make-datasource
-                (merge pool-config {:adapter "mysql"}))]
+                (merge pool-config fixed-pool-config))]
         (log/info :connection-pool :started)
         (assoc component :datasource cp))
       component))

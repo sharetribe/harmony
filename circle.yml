@@ -1,0 +1,15 @@
+machine:
+  environment:
+    LOG_LEVEL: INFO
+    DB_USER: ubuntu
+    DB_PASSWORD:
+    DB_HOST: 127.0.0.1
+    DB_PORT: 3306
+  java:
+    version: oraclejdk8
+
+test:
+  override:
+    - lein trampoline test2junit
+  post:
+    - cp -R test-results $CIRCLE_TEST_REPORTS

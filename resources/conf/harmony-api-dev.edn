@@ -1,14 +1,29 @@
 {:web-server
  {:port #config/prop ["PORT" 8085]
   :dev-mode? true}
+
  :connection-pool
  {:username #config/prop ["DB_USER" "root"]
   :password #config/prop ["DB_PASSWORD" "harmony-root"]
-  :database-name #config/prop ["DB_NAME" "harmony_production"]
+  :database-name #config/prop ["DB_NAME" "harmony_db"]
   :server-name #config/prop ["DB_HOST" "127.0.0.1"]
   :port-number #config/prop ["DB_PORT" 13306]
   :connection-timeout #config/prop ["DB_CONN_TIMEOUT" 30000]
   :validation-timeout #config/prop ["DB_VALID_TIMEOUT" 5000]
   :idle-timeout #config/prop ["DB_IDLE_TIMEOUT" 600000]
   :minimum-idle #config/prop ["DB_MIN_IDLE" 10]
-  :maximum-pool-size #config/prop ["DB_MAX_POOL" 10]}}
+  :maximum-pool-size #config/prop ["DB_MAX_POOL" 10]}
+
+ :migrations
+ {:store :database
+  :migration-dir "migrations"
+  :db {:subprotocol "mysql"
+       :subname #config/join ["//"
+                              #config/prop ["DB_HOST" "127.0.0.1"]
+                              ":"
+                              #config/prop ["DB_PORT" "13306"]
+                              "/"
+                              #config/prop ["DB_NAME" "harmony_db"]
+                              "?createDatabaseIfNotExist=true"]
+       :user #config/prop ["DB_USER" "root"]
+       :password #config/prop ["DB_PASSWORD" "harmony-root"]}}}
