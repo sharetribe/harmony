@@ -73,36 +73,30 @@
 
 (defn calc-free-time-slots
   [db {:keys [marketplaceId refId start end]}]
-  (when-let [{:keys [bookable]} (store/fetch-bookable
-                                 db
-                                 {:m-id marketplaceId :ref-id refId})]
-    (let [bookings (store/fetch-bookings db {:bookable-id (:id bookable)
-                                             :start start
-                                             :end end})]
-         (->> (free-dates start end bookings)
-              (map #(time-slot refId %))))))
+  (when-let [bookable-id (db.bookable/fetch-bookable-id
+                          db
+                          {:marketplaceId marketplaceId :refId refId})]
+    (let [bookings (db.bookable/fetch-bookings db {:bookableId bookable-id
+                                                   :start start
+                                                   :end end})]
+      (->> (free-dates start end bookings)
+           (map #(time-slot refId %))))))
 
-(defn- booking-defaults
-  [{:keys [m-id bookable-id customer-id initial-status start end]}]
-  {:marketplaceId m-id
-   :bookableId bookable-id
-   :customerId customer-id
-   :status initial-status
-   :seats 1
-   :start start
-   :end end})
+(defn- booking-defaults [booking-cmd bookable-id]
+  (-> booking-cmd
+      (select-keys [:marketplaceId :customerId :start :end])
+      (assoc :bookableId bookable-id
+             :seats 1
+             :status (:initialStatus booking-cmd))))
 
 (defn initiate-booking [db cmd]
-  (let [{:keys [marketplaceId refId customerId initialStatus start end]} cmd]
-    (when-let [{:keys [bookable]} (store/fetch-bookable
-                                   db
-                                   {:m-id marketplaceId :ref-id refId})]
-      (store/insert-booking db (booking-defaults {:m-id marketplaceId
-                                                  :bookable-id (:id bookable)
-                                                  :customer-id customerId
-                                                  :initial-status initialStatus
-                                                  :start start
-                                                  :end end})))))
+  (let [{:keys [marketplaceId refId]} cmd]
+    (when-let [bookable-id (db.bookable/fetch-bookable-id
+                            db
+                            {:marketplaceId marketplaceId :refId refId})]
+      (let [booking (booking-defaults cmd bookable-id)
+            booking-id (db.bookable/create-booking db booking)]
+        (db.bookable/fetch-booking db {:id booking-id})))))
 
 (comment
   (def db (store/new-mem-booking-store))

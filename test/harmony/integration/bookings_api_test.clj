@@ -84,7 +84,7 @@
     (is (= 409 status-second))))
 
 
-#_(deftest initiate-booking
+(deftest initiate-booking
   (let [_ (do-post "/bookables/create"
                 {:marketplaceId (fixed-uuid :marketplaceId)
                  :refId (fixed-uuid :refId)
@@ -106,7 +106,7 @@
             :end #inst "2016-09-20T00:00:00.000Z"}
            (select-keys (get-in body [:data :attributes]) [:customerId :status :seats :start :end])))))
 
-#_(deftest query-timeslots
+(deftest query-timeslots
   (let [_ (do-post "/bookables/create"
                 {:marketplaceId (fixed-uuid :marketplaceId)
                  :refId (fixed-uuid :refId)
@@ -133,7 +133,7 @@
     (is (= (count free-timeslots) (count (:data body))))
     (is (= expected actual))))
 
-#_(deftest query-reserved-timeslots
+(deftest query-reserved-timeslots
   (let [_ (do-post "/bookables/create"
                 {:marketplaceId (fixed-uuid :marketplaceId)
                  :refId (fixed-uuid :refId)
