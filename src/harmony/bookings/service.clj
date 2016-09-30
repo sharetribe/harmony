@@ -73,14 +73,14 @@
 
 (defn calc-free-time-slots
   [db {:keys [marketplaceId refId start end]}]
-  (when-let [{:keys [bookable]} (store/fetch-bookable
-                                 db
-                                 {:m-id marketplaceId :ref-id refId})]
-    (let [bookings (store/fetch-bookings db {:bookable-id (:id bookable)
-                                             :start start
-                                             :end end})]
-         (->> (free-dates start end bookings)
-              (map #(time-slot refId %))))))
+  (when-let [bookable-id (db.bookable/fetch-bookable-id
+                          db
+                          {:marketplaceId marketplaceId :refId refId})]
+    (let [bookings (db.bookable/fetch-bookings db {:bookableId bookable-id
+                                                   :start start
+                                                   :end end})]
+      (->> (free-dates start end bookings)
+           (map #(time-slot refId %))))))
 
 (defn- booking-defaults [booking-cmd bookable-id]
   (-> booking-cmd

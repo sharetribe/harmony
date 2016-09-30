@@ -156,6 +156,18 @@
      :id (uuid->sorted-bytes id)})
    #{:status}))
 
+(defn fetch-bookings
+  "Fetch a set of bookings with given parameters."
+  [db {:keys [:bookableId :start :end]}]
+  (map
+   #(format-query-result % #{:status})
+   (bookings-by-bookable-start-end
+    db
+    {:cols ["id" "marketplace_id" "bookable_id" "customer_id" "status" "seats" "start" "end"]
+     :bookableId (uuid->sorted-bytes bookableId)
+     :start start
+     :end end})))
+
 (comment
   (def m-id (uuid/v1))
   (def ref-id (uuid/v1))
