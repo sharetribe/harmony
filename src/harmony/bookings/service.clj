@@ -1,6 +1,5 @@
 (ns harmony.bookings.service
-  (:require [harmony.bookings.store :as store]
-            [harmony.bookings.db.bookable :as db.bookable]
+  (:require [harmony.bookings.db.bookable :as db.bookable]
             [clj-time.core :as t]
             [clj-time.periodic :as periodic]
             [clj-time.coerce :as coerce]))
