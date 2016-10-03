@@ -91,7 +91,7 @@
   "Fetch a bookable by marketplaceId and refId."
   [db-or-tx {:keys [marketplaceId refId]}]
   (format-query-result
-   (bookable-by-ref-spec-cols
+   (find-bookable-by-ref
     db-or-tx
     {:cols ["id" "marketplace_id" "ref_id" "author_id" "unit_type" "active_plan_id"]
      :marketplaceId (uuid->sorted-bytes marketplaceId)
@@ -102,7 +102,7 @@
   "Fetch the id of a bookable by marketplaceId and refId. Return nil
   if no match."
   [db {:keys [marketplaceId refId]}]
-  (when-let [b (bookable-by-ref-spec-cols
+  (when-let [b (find-bookable-by-ref
                 db
                 {:cols ["id"]
                  :marketplaceId (uuid->sorted-bytes marketplaceId)
@@ -122,7 +122,7 @@
   "Fetch a plan by given primary id (uuid)."
   [db-or-tx {:keys [id]}]
   (format-query-result
-   (plan-by-id-spec-cols
+   (find-plan-by-id
     db-or-tx
     {:cols ["id" "marketplace_id" "seats" "plan_mode"]
      :id (uuid->sorted-bytes id)})
@@ -150,7 +150,7 @@
   "Fetch a booking by id"
   [db {:keys [id]}]
   (format-query-result
-   (booking-by-id-spec-cols
+   (find-booking-by-id
     db
     {:cols ["id" "marketplace_id" "bookable_id" "customer_id" "status" "seats" "start" "end"]
      :id (uuid->sorted-bytes id)})
@@ -161,7 +161,7 @@
   [db {:keys [:bookableId :start :end]}]
   (map
    #(format-query-result % #{:status})
-   (bookings-by-bookable-start-end
+   (find-bookings-by-bookable-start-end
     db
     {:cols ["id" "marketplace_id" "bookable_id" "customer_id" "status" "seats" "start" "end"]
      :bookableId (uuid->sorted-bytes bookableId)
