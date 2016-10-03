@@ -1,11 +1,11 @@
-(ns harmony.bookings.db.bookable
+(ns harmony.bookings.db
   (:require [hugsql.core :as hugsql]
             [clj-uuid :as uuid]
             [clojure.java.jdbc :as jdbc]
             [harmony.util.db :refer [format-result format-insert-data format-params]]))
 
-(hugsql/def-db-fns "harmony/bookings/db/sql/bookables.sql" {:quoting :mysql})
-(hugsql/def-sqlvec-fns "harmony/bookings/db/sql/bookables.sql" {:quoting :mysql})
+(hugsql/def-db-fns "harmony/bookings/db/sql/bookings.sql" {:quoting :mysql})
+(hugsql/def-sqlvec-fns "harmony/bookings/db/sql/bookings.sql" {:quoting :mysql})
 
 
 ;; Public query methods
