@@ -102,6 +102,11 @@
               booking-id (db/create-booking db booking)]
           (db/fetch-booking db {:id booking-id}))))))
 
+(defn accept-booking [db id]
+  (let [booking (db/fetch-booking db {:id id})]
+    (when booking
+      (assoc booking :status :accepted))))
+
 (comment
   (def db (store/new-mem-booking-store))
   (create-bookable db {:marketplaceId 1234 :refId 4444 :authorId 27272})

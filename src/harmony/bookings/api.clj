@@ -104,6 +104,25 @@
             (-> (response/response "Cannot create booking.")
                 (response/status http-status/conflict)))))))))
 
+(defn accept-booking [deps]
+  (let [{:keys [db]} deps]
+    (api/annotate
+     {:summary "Accept a booking"
+      :parameters {:query-params {:id s/Uuid}}
+      :responses {http-status/ok {:body (resource/created-response-schema types/Booking)}
+                  http-status/conflict {:body s/Str}}
+      :operationId :accept-booking}
+     (interceptor/handler
+      ::accept-booking
+      (fn [req]
+        (let [{:keys [id]} (get req :query-params)
+              booking (bookings/accept-booking db id)]
+          (if booking
+            (response/response
+             (resource/created-response types/Booking booking))
+            (-> (response/response "Cannot accept booking.")
+                (response/status http-status/conflict)))))))))
+
 ;; (def update-availability
 ;;   (api/annotate
 ;;    {:summary "Create and update an availability schedule for a bookable."
@@ -163,6 +182,7 @@
       ["/bookables/show" :get (conj api-interceptors (show-bookable deps))]
       ["/timeslots/query" :get (conj api-interceptors (query-time-slots deps))]
       ["/bookings/initiate" :post (conj api-interceptors (initiate-booking deps))]
+      ["/bookings/accept" :post (conj api-interceptors (accept-booking deps))]
 
       ["/swagger.json" :get (conj api-interceptors (swagger-json))]
       ["/apidoc/*resource" :get api/swagger-ui]})))
