@@ -10,11 +10,6 @@ values (:id, :marketplaceId, :refId, :authorId, :unitType, :activePlanId);
 select :i*:cols from bookables
 where marketplace_id = :marketplaceId AND ref_id = :refId;
 
--- :name count-bookables-by-ref :? :1
--- :doc Return the count of bookables for given marketplace id and ref id. Possible values are 1 and 0.
-select count(id) as count from bookables
-where marketplace_id = :marketplaceId AND ref_id = :refId;
-
 -- :name insert-plan :! :n
 -- :doc Insert a new plan
 insert into plans (id, marketplace_id, bookable_id, seats, plan_mode)

@@ -19,9 +19,10 @@
 (defn create-bookable
   [db create-cmd]
   (let [{:keys [marketplaceId refId authorId]} create-cmd]
-    (when-not (db.bookable/contains-bookable?
-               db
-               {:marketplaceId marketplaceId :refId refId})
+    (when-not (:id (db.bookable/fetch-bookable
+                    db
+                    {:marketplaceId marketplaceId :refId refId}
+                    {:cols :id}))
       (let [{:keys [bookable plan]}
             (bookable-defaults marketplaceId refId authorId)
             _ (db.bookable/create-bookable db bookable plan)
@@ -72,14 +73,16 @@
 
 (defn calc-free-time-slots
   [db {:keys [marketplaceId refId start end]}]
-  (when-let [bookable-id (db.bookable/fetch-bookable-id
-                          db
-                          {:marketplaceId marketplaceId :refId refId})]
-    (let [bookings (db.bookable/fetch-bookings db {:bookableId bookable-id
-                                                   :start start
-                                                   :end end})]
-      (->> (free-dates start end bookings)
-           (map #(time-slot refId %))))))
+  (let [{bookable-id :id} (db.bookable/fetch-bookable
+                                db
+                                {:marketplaceId marketplaceId :refId refId}
+                                {:cols :id})]
+    (when bookable-id
+      (let [bookings (db.bookable/fetch-bookings db {:bookableId bookable-id
+                                                     :start start
+                                                     :end end})]
+        (->> (free-dates start end bookings)
+             (map #(time-slot refId %)))))))
 
 (defn- booking-defaults [booking-cmd bookable-id]
   (-> booking-cmd
@@ -90,12 +93,14 @@
 
 (defn initiate-booking [db cmd]
   (let [{:keys [marketplaceId refId]} cmd]
-    (when-let [bookable-id (db.bookable/fetch-bookable-id
-                            db
-                            {:marketplaceId marketplaceId :refId refId})]
-      (let [booking (booking-defaults cmd bookable-id)
-            booking-id (db.bookable/create-booking db booking)]
-        (db.bookable/fetch-booking db {:id booking-id})))))
+    (let [{bookable-id :id} (db.bookable/fetch-bookable
+                             db
+                             {:marketplaceId marketplaceId :refId refId}
+                             {:cols :id})]
+      (when bookable-id
+        (let [booking (booking-defaults cmd bookable-id)
+              booking-id (db.bookable/create-booking db booking)]
+          (db.bookable/fetch-booking db {:id booking-id}))))))
 
 (comment
   (def db (store/new-mem-booking-store))

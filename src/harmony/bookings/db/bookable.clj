@@ -112,24 +112,6 @@
              {:cols cols :default-cols #{:id :marketplaceId :refId :authorId :unitType :activePlanId}})]
      (format-query-result (find-bookable-by-ref db qp) #{:unitType}))))
 
-(defn fetch-bookable-id
-  "Fetch the id of a bookable by marketplaceId and refId. Return nil
-  if no match."
-  [db {:keys [marketplaceId refId]}]
-  (when-let [b (find-bookable-by-ref
-                db
-                {:cols ["id"]
-                 :marketplaceId (uuid->sorted-bytes marketplaceId)
-                 :refId (uuid->sorted-bytes refId)})]
-    (-> b :id sorted-bytes->uuid)))
-
-(defn contains-bookable?
-  "Check if a bookable exists for the given marketplaceId and refId."
-  [db {:keys [marketplaceId refId]}]
-  (let [qp (format-params {:marketplaceId marketplaceId :refId refId})
-        res (count-bookables-by-ref db qp)]
-    (> (:count res) 0)))
-
 (defn fetch-plan
   "Fetch a plan by given primary id (uuid)."
   ([db query-params] (fetch-plan db query-params {}))
@@ -198,7 +180,7 @@
     )
 
   (let [db (:db-conn-pool reloaded.repl/system)]
-    (contains-bookable? db {:marketplaceId m-id :refId ref-id}))
+    (fetch-bookable db {:marketplaceId m-id :refId ref-id} {:cols :id}))
 
   b-ret
 
