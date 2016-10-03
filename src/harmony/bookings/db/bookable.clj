@@ -1,92 +1,11 @@
 (ns harmony.bookings.db.bookable
-  (:require [clojure.string :as str]
-            [harmony.util.data :refer [map-keys map-values map-kvs]]
-            [hugsql.core :as hugsql]
+  (:require [hugsql.core :as hugsql]
             [clj-uuid :as uuid]
             [clojure.java.jdbc :as jdbc]
-            [harmony.util.uuid :refer [uuid->sorted-bytes sorted-bytes->uuid]]))
+            [harmony.util.db :refer [format-result format-insert-data format-params]]))
 
 (hugsql/def-db-fns "harmony/bookings/db/sql/bookables.sql" {:quoting :mysql})
 (hugsql/def-sqlvec-fns "harmony/bookings/db/sql/bookables.sql" {:quoting :mysql})
-
-
-;; Formatting data to and from DB
-;;
-
-(defn- camel-case-key
-  "Convert a mysql column name (snake_cased) key into camelCased key."
-  [k]
-  (let [[f & r] (str/split (name k) #"_")]
-    (keyword
-     (apply str (cons f (map str/capitalize r))))))
-
-(defn- snake-case-str
-  "Convert a camelCase keyword to a snake_case string."
-  [k]
-  (let [[f & r] (re-seq #"^[1-9a-z]+|[A-Z][1-9a-z]*" (name k))]
-    (apply str (interpose "_" (cons f (map str/lower-case r))))))
-
-(defn- bytes-to-uuid
-  "If v is a byte array representing UUID convert it to
-  UUID. Otherwise return as is."
-  [v]
-  (if (and (instance? (Class/forName "[B") v)
-           (= (count v) 16))
-    (sorted-bytes->uuid v)
-    v))
-
-(defn- uuid-to-bytes
-  "If v is a UUID convert to byte array. Otherwise return as is."
-  [v]
-  (if (instance? java.util.UUID v)
-    (uuid->sorted-bytes v)
-    v))
-
-(defn- keywordize
-  [k v kws]
-  (if (and (contains? kws k)
-           (not (keyword? v)))
-    [k (keyword v)]
-    [k v]))
-
-(defn- stringify
-  [v]
-  (if (keyword? v)
-    (name v)
-    v))
-
-(defn- format-query-result
-  "Format the raw result pulled form DB to be returned as a
-  resource. kws is a set of key names in camelCase whose value should
-  be converted to keyword."
-  ([db-response] (format-query-result db-response nil))
-  ([db-response kws]
-   (if (seq kws)
-     (some-> db-response
-             (map-values bytes-to-uuid)
-             (map-keys camel-case-key)
-             (map-kvs keywordize kws))
-     (some-> db-response
-             (map-values bytes-to-uuid)
-             (map-keys camel-case-key)))))
-
-(defn- format-insert-data
-  "Format an object for insertion to DB."
-  [insert-data]
-  (some-> insert-data
-          (map-values uuid-to-bytes)
-          (map-values stringify)))
-
-(defn- format-params
-  ([params] (format-params params nil))
-  ([params {:keys [cols default-cols]}]
-   (let [p (map-values params uuid-to-bytes)]
-     (cond
-       (keyword? cols)          (assoc p :cols [(snake-case-str cols)])
-       (seq cols)               (assoc p :cols (map snake-case-str cols))
-       (and (empty? cols)
-            (seq default-cols)) (assoc p :cols (map snake-case-str default-cols))
-       :else                    p))))
 
 
 ;; Public query methods
@@ -110,7 +29,8 @@
    (let [qp (format-params
              {:marketplaceId marketplaceId :refId refId}
              {:cols cols :default-cols #{:id :marketplaceId :refId :authorId :unitType :activePlanId}})]
-     (format-query-result (find-bookable-by-ref db qp) #{:unitType}))))
+     (format-result (find-bookable-by-ref db qp)
+                    {:as-keywords #{:unitType}}))))
 
 (defn fetch-plan
   "Fetch a plan by given primary id (uuid)."
@@ -119,7 +39,9 @@
    (let [qp (format-params
              {:id id}
              {:cols cols :default-cols [:id :marketplaceId :seats :planMode]})]
-     (format-query-result (find-plan-by-id db qp) #{:planMode}))))
+     (format-result
+      (find-plan-by-id db qp)
+      {:as-keywords #{:planMode}}))))
 
 (defn fetch-bookable-with-plan
   "Fetch the bookable by marketplace id and reference id + the
@@ -146,9 +68,9 @@
    (let [qp (format-params
              {:id id}
              {:cols cols :default-cols #{:id :marketplaceId :bookableId :customerId :status :seats :start :end}})]
-     (format-query-result
+     (format-result
       (find-booking-by-id db qp)
-      #{:status}))))
+      {:as-keywords #{:status}}))))
 
 (defn fetch-bookings
   "Fetch a set of bookings with given parameters."
@@ -158,7 +80,7 @@
              {:bookableId bookableId :start start :end end}
              {:cols cols :default-cols #{:id :marketplaceId :bookableId :customerId :status :seats :start :end}})]
      (map
-      #(format-query-result % #{:status})
+      #(format-result % {:as-keywords #{:status}})
       (find-bookings-by-bookable-start-end db qp)))))
 
 (comment
@@ -167,7 +89,8 @@
   (def b {:marketplaceId m-id
           :refId ref-id
           :authorId (uuid/v1)
-          :unitType :day})
+          :unitType :day}
+)
   (def p {:marketplaceId m-id
           :seats 1
           :planMode :available})
