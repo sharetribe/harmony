@@ -18,7 +18,13 @@
   [k]
   (let [[f & r] (str/split (name k) #"_")]
     (keyword
-     (apply str (concat [f] (map str/capitalize r))))))
+     (apply str (cons f (map str/capitalize r))))))
+
+(defn- snake-case-str
+  "Convert a camelCase keyword to a snake_case string."
+  [k]
+  (let [[f & r] (re-seq #"^[1-9a-z]+|[A-Z][1-9a-z]*" (name k))]
+    (apply str (interpose "_" (cons f (map str/lower-case r))))))
 
 (defn- bytes-to-uuid
   "If v is a byte array representing UUID convert it to
@@ -71,6 +77,16 @@
           (map-values uuid-to-bytes)
           (map-values stringify)))
 
+(defn- format-params
+  ([params] (format-params params nil))
+  ([params {:keys [cols default-cols]}]
+   (let [p (map-values params uuid-to-bytes)]
+     (cond
+       (keyword? cols)          (assoc p :cols [(snake-case-str cols)])
+       (seq cols)               (assoc p :cols (map snake-case-str cols))
+       (and (empty? cols)
+            (seq default-cols)) (assoc p :cols (map snake-case-str default-cols))
+       :else                    p))))
 
 
 ;; Public query methods
@@ -89,14 +105,12 @@
 
 (defn fetch-bookable
   "Fetch a bookable by marketplaceId and refId."
-  [db-or-tx {:keys [marketplaceId refId]}]
-  (format-query-result
-   (find-bookable-by-ref
-    db-or-tx
-    {:cols ["id" "marketplace_id" "ref_id" "author_id" "unit_type" "active_plan_id"]
-     :marketplaceId (uuid->sorted-bytes marketplaceId)
-     :refId (uuid->sorted-bytes refId)})
-   #{:unitType}))
+  ([db query-params] (fetch-bookable db query-params {}))
+  ([db {:keys [marketplaceId refId]} {:keys [cols]}]
+   (let [qp (format-params
+             {:marketplaceId marketplaceId :refId refId}
+             {:cols cols :default-cols #{:id :marketplaceId :refId :authorId :unitType :activePlanId}})]
+     (format-query-result (find-bookable-by-ref db qp) #{:unitType}))))
 
 (defn fetch-bookable-id
   "Fetch the id of a bookable by marketplaceId and refId. Return nil
@@ -112,21 +126,18 @@
 (defn contains-bookable?
   "Check if a bookable exists for the given marketplaceId and refId."
   [db {:keys [marketplaceId refId]}]
-  (let [res (count-bookables-by-ref
-             db
-             {:marketplaceId (uuid->sorted-bytes marketplaceId)
-              :refId (uuid->sorted-bytes refId)})]
+  (let [qp (format-params {:marketplaceId marketplaceId :refId refId})
+        res (count-bookables-by-ref db qp)]
     (> (:count res) 0)))
 
 (defn fetch-plan
   "Fetch a plan by given primary id (uuid)."
-  [db-or-tx {:keys [id]}]
-  (format-query-result
-   (find-plan-by-id
-    db-or-tx
-    {:cols ["id" "marketplace_id" "seats" "plan_mode"]
-     :id (uuid->sorted-bytes id)})
-   #{:planMode}))
+  ([db query-params] (fetch-plan db query-params {}))
+  ([db {:keys [id]} {:keys [cols]}]
+   (let [qp (format-params
+             {:id id}
+             {:cols cols :default-cols [:id :marketplaceId :seats :planMode]})]
+     (format-query-result (find-plan-by-id db qp) #{:planMode}))))
 
 (defn fetch-bookable-with-plan
   "Fetch the bookable by marketplace id and reference id + the
@@ -147,26 +158,26 @@
     booking-id))
 
 (defn fetch-booking
-  "Fetch a booking by id"
-  [db {:keys [id]}]
-  (format-query-result
-   (find-booking-by-id
-    db
-    {:cols ["id" "marketplace_id" "bookable_id" "customer_id" "status" "seats" "start" "end"]
-     :id (uuid->sorted-bytes id)})
-   #{:status}))
+  "Fetch a booking by id."
+  ([db query-params] (fetch-booking db query-params {}))
+  ([db {:keys [id]} {:keys [cols]}]
+   (let [qp (format-params
+             {:id id}
+             {:cols cols :default-cols #{:id :marketplaceId :bookableId :customerId :status :seats :start :end}})]
+     (format-query-result
+      (find-booking-by-id db qp)
+      #{:status}))))
 
 (defn fetch-bookings
   "Fetch a set of bookings with given parameters."
-  [db {:keys [:bookableId :start :end]}]
-  (map
-   #(format-query-result % #{:status})
-   (find-bookings-by-bookable-start-end
-    db
-    {:cols ["id" "marketplace_id" "bookable_id" "customer_id" "status" "seats" "start" "end"]
-     :bookableId (uuid->sorted-bytes bookableId)
-     :start start
-     :end end})))
+  ([db query-params] (fetch-bookings db query-params {}))
+  ([db {:keys [:bookableId :start :end]} {:keys [cols]}]
+   (let [qp (format-params
+             {:bookableId bookableId :start start :end end}
+             {:cols cols :default-cols #{:id :marketplaceId :bookableId :customerId :status :seats :start :end}})]
+     (map
+      #(format-query-result % #{:status})
+      (find-bookings-by-bookable-start-end db qp)))))
 
 (comment
   (def m-id (uuid/v1))
