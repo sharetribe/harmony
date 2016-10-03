@@ -1,9 +1,8 @@
 (ns harmony.bookings.service
-  (:require [harmony.bookings.store :as store]
-            [harmony.bookings.db.bookable :as db.bookable]
-            [clj-time.core :as t]
+  (:require [clj-time.core :as t]
             [clj-time.periodic :as periodic]
-            [clj-time.coerce :as coerce]))
+            [clj-time.coerce :as coerce]
+            [harmony.bookings.db :as db]))
 
 (defn- bookable-defaults [m-id ref-id author-id]
   (let [plan {:marketplaceId m-id
@@ -20,20 +19,21 @@
 (defn create-bookable
   [db create-cmd]
   (let [{:keys [marketplaceId refId authorId]} create-cmd]
-    (when-not (db.bookable/contains-bookable?
-               db
-               {:marketplaceId marketplaceId :refId refId})
+    (when-not (:id (db/fetch-bookable
+                    db
+                    {:marketplaceId marketplaceId :refId refId}
+                    {:cols :id}))
       (let [{:keys [bookable plan]}
             (bookable-defaults marketplaceId refId authorId)
-            _ (db.bookable/create-bookable db bookable plan)
+            _ (db/create-bookable db bookable plan)
             {:keys [bookable active-plan]}
-            (db.bookable/fetch-bookable-with-plan db {:marketplaceId marketplaceId :refId refId})]
+            (db/fetch-bookable-with-plan db {:marketplaceId marketplaceId :refId refId})]
         (assoc bookable :activePlan active-plan)))))
 
 (defn fetch-bookable
   [db m-id ref-id]
   (when-let [{:keys [bookable active-plan]}
-             (db.bookable/fetch-bookable-with-plan
+             (db/fetch-bookable-with-plan
               db
               {:marketplaceId m-id :refId ref-id})]
     (assoc bookable :activePlan active-plan)))
@@ -73,14 +73,16 @@
 
 (defn calc-free-time-slots
   [db {:keys [marketplaceId refId start end]}]
-  (when-let [bookable-id (db.bookable/fetch-bookable-id
-                          db
-                          {:marketplaceId marketplaceId :refId refId})]
-    (let [bookings (db.bookable/fetch-bookings db {:bookableId bookable-id
-                                                   :start start
-                                                   :end end})]
-      (->> (free-dates start end bookings)
-           (map #(time-slot refId %))))))
+  (let [{bookable-id :id} (db/fetch-bookable
+                                db
+                                {:marketplaceId marketplaceId :refId refId}
+                                {:cols :id})]
+    (when bookable-id
+      (let [bookings (db/fetch-bookings db {:bookableId bookable-id
+                                                     :start start
+                                                     :end end})]
+        (->> (free-dates start end bookings)
+             (map #(time-slot refId %)))))))
 
 (defn- booking-defaults [booking-cmd bookable-id]
   (-> booking-cmd
@@ -91,12 +93,14 @@
 
 (defn initiate-booking [db cmd]
   (let [{:keys [marketplaceId refId]} cmd]
-    (when-let [bookable-id (db.bookable/fetch-bookable-id
-                            db
-                            {:marketplaceId marketplaceId :refId refId})]
-      (let [booking (booking-defaults cmd bookable-id)
-            booking-id (db.bookable/create-booking db booking)]
-        (db.bookable/fetch-booking db {:id booking-id})))))
+    (let [{bookable-id :id} (db/fetch-bookable
+                             db
+                             {:marketplaceId marketplaceId :refId refId}
+                             {:cols :id})]
+      (when bookable-id
+        (let [booking (booking-defaults cmd bookable-id)
+              booking-id (db/create-booking db booking)]
+          (db/fetch-booking db {:id booking-id}))))))
 
 (comment
   (def db (store/new-mem-booking-store))

@@ -87,6 +87,8 @@ contents are persisted even across removing and rebuilding the MySQL
 db container. To completely clean up your development database just
 delete the aforementioned directory in your home directory.
 
+Check the conventions for code style and architure: [conventions and structure](doc/conventions_and_structure.md).
+
 ## Testing
 
 Integrations tests (test/harmony/integration/) run against a live
