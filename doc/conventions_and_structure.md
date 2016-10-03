@@ -74,12 +74,13 @@ The Harmony service consists of generic services, generic utilities and independ
 
 To talk to a SQL database we use
 [the HugSQL library](http://www.hugsql.org/). You can read more about
-the library in the linked documentation but the gist of it DB access
-functions are written as pure parameterized SQL and exposed (via
-macro) as functions in desired namespace. On top of this we implement
-a thin abstraction of db access functions that handle things like
-translating between columns naming conventions in DB and key names of
-Clojure maps that represent domain data. For the bookings submodule the layering looks like this:
+the library in the linked documentation but the gist of it is that db
+access functions are written as pure parameterized SQL and exposed
+(via macro) as functions in desired namespace. On top of this we
+implement a thin abstraction of db access functions that handle things
+like translating between columns naming conventions in db and key
+names of Clojure maps that represent domain data. For the bookings
+submodule the layering looks like this:
 
 ```text
 -- service implementation (harmony.bookings.service) --
@@ -105,23 +106,21 @@ Clojure maps that represent domain data. For the bookings submodule the layering
 
 To make it clear which layer is in question we use a couple of simple
 naming conventions. The HugSQL generated functions (defined in .sql
-file) always have an insert- update- or find- prefixes (we might
+file) always have an insert- update- or select- prefixes (we might
 define more later if need be, e.g. count-, or delete-). The prefix
-tells what type of DML operation is in question (fetch- maps to
-select). At the db access layer level a function that creates data has
-a create- prefix and a function that looks up data has a fetch-
-prefix.
+tells what type of DML operation is in question. At the db access
+layer level a function that creates data has a create- prefix and a
+function that looks up data has a fetch- prefix.
 
-#### Dynamic column spefication
+#### Dynamic column specification
 
-All the find-functions should be made to accept a :cols-paremeter to
-dynamically control the column list in a select
-statement.
+All the select-functions should be made to accept a :cols-paremeter to
+dynamically control the column list in a select statement.
 
 In a HugSQL .sql file it looks like this:
 
 ```sql
--- :name find-booking-by-id :? :1
+-- :name select-booking-by-id :? :1
 -- :doc Get a booking by id
 select :i*:cols from bookings
 where id = :id;
@@ -130,11 +129,11 @@ where id = :id;
 The :id in this case is a query parameter and :cols is a seq of
 columns to be selected.
 
-Fetch-functions  are then written as arity 3 functions that
-take the db connection, the query parameters and a columns
-speficiation for the data to be returned. In addition, fetch-functions
-should define an arity 2 version that omits the columns spec and uses
-a default column spefication instead. An example from the bookings module:
+select-functions are then written as arity 3 functions that take a db
+connection, query parameters and a columns speficiation for the data
+to be returned. In addition, fetch-functions should define an arity 2
+version that omits the columns spec and uses a default column
+spefication instead. An example from the bookings module:
 
 ```clojure
 (defn fetch-bookable
@@ -144,7 +143,7 @@ a default column spefication instead. An example from the bookings module:
    (let [qp (format-params
              {:marketplaceId marketplaceId :refId refId}
              {:cols cols :default-cols #{:id :marketplaceId :refId :authorId :unitType :activePlanId}})]
-     (format-result (find-bookable-by-ref db qp)
+     (format-result (select-bookable-by-ref db qp)
                     {:as-keywords #{:unitType}}))))
 
 ```
@@ -170,7 +169,7 @@ functions and the HugSQL queries itself, should be limited as much as
 possible. One way to do this is to not implement special queries where
 the same effect can be achieved with an existing and/or more generic
 query. One example is implementing an contains? query that checks if
-the DB contains a row for given parameters. Another example is
+the db contains a row for given parameters. Another example is
 implementing a query that directly returns the uuid of a row for given
 parameters. Both goals can just as well be achieved by implementing a
 fetch-function with dynamic cols spec as described in the previous

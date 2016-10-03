@@ -29,7 +29,7 @@
    (let [qp (format-params
              {:marketplaceId marketplaceId :refId refId}
              {:cols cols :default-cols #{:id :marketplaceId :refId :authorId :unitType :activePlanId}})]
-     (format-result (find-bookable-by-ref db qp)
+     (format-result (select-bookable-by-ref db qp)
                     {:as-keywords #{:unitType}}))))
 
 (defn fetch-plan
@@ -40,7 +40,7 @@
              {:id id}
              {:cols cols :default-cols [:id :marketplaceId :seats :planMode]})]
      (format-result
-      (find-plan-by-id db qp)
+      (select-plan-by-id db qp)
       {:as-keywords #{:planMode}}))))
 
 (defn fetch-bookable-with-plan
@@ -69,7 +69,7 @@
              {:id id}
              {:cols cols :default-cols #{:id :marketplaceId :bookableId :customerId :status :seats :start :end}})]
      (format-result
-      (find-booking-by-id db qp)
+      (select-booking-by-id db qp)
       {:as-keywords #{:status}}))))
 
 (defn fetch-bookings
@@ -78,10 +78,17 @@
   ([db {:keys [:bookableId :start :end]} {:keys [cols]}]
    (let [qp (format-params
              {:bookableId bookableId :start start :end end}
-             {:cols cols :default-cols #{:id :marketplaceId :bookableId :customerId :status :seats :start :end}})]
+             {:cols cols :default-cols #{:id
+                                         :marketplaceId
+                                         :bookableId
+                                         :customerId
+                                         :status
+                                         :seats
+                                         :start
+                                         :end}})]
      (map
       #(format-result % {:as-keywords #{:status}})
-      (find-bookings-by-bookable-start-end db qp)))))
+      (select-bookings-by-bookable-start-end db qp)))))
 
 (comment
   (def m-id (uuid/v1))
