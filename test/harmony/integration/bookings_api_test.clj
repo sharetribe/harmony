@@ -129,10 +129,8 @@
         booking-id (get-in initiate-res [:body :data :id])
         {:keys [status body]} (do-post "/bookings/accept"
                                        {:id booking-id}
-                                       {})]
-
-    ;; TODO Change the test so that we don't examine the /bookings/accept response,
-    ;; but instead make a new GET and examine that
+                                       {:actorId (fixed-uuid :providerId)
+                                        :reason "provider accepted"})]
 
     (is (= 200 status))
     (is (= :accepted (get-in body [:data :attributes :status])))))

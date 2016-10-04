@@ -22,6 +22,11 @@
    :refId s/Uuid
    :authorId s/Uuid})
 
+(s/defschema AcceptBookingCmd
+  "Accept booking"
+  {:actorId s/Uuid
+   :reason s/Str})
+
 (defonce myreq (atom nil))
 
 (comment
@@ -108,7 +113,8 @@
   (let [{:keys [db]} deps]
     (api/annotate
      {:summary "Accept a booking"
-      :parameters {:query-params {:id s/Uuid}}
+      :parameters {:query-params {:id s/Uuid}
+                   :body-params AcceptBookingCmd}
       :responses {http-status/ok {:body (resource/created-response-schema types/Booking)}
                   http-status/conflict {:body s/Str}}
       :operationId :accept-booking}
