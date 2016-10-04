@@ -25,6 +25,11 @@ where id = :id;
 insert into bookings (id, marketplace_id, bookable_id, customer_id, status, seats, start, end)
 values (:id, :marketplaceId, :bookableId, :customerId, :status, :seats, :start, :end);
 
+-- :name update-booking-status :! :n
+-- :doc Update booking
+update bookings set status = :status
+where id = :id;
+
 -- :name select-booking-by-id :? :1
 -- :doc Get a booking by id
 select :i*:cols from bookings

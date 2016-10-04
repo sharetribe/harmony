@@ -90,6 +90,11 @@
       #(format-result % {:as-keywords #{:status}})
       (select-bookings-by-bookable-start-end db qp)))))
 
+(defn modify-booking-status
+  "Update booking status"
+  [db booking]
+  (update-booking-status db (format-insert-data booking)))
+
 (comment
   (def m-id (uuid/v1))
   (def ref-id (uuid/v1))
