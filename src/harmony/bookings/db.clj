@@ -90,7 +90,7 @@
       #(format-result % {:as-keywords #{:status}})
       (select-bookings-by-bookable-start-end db qp)))))
 
-(defn edit-booking-status
+(defn modify-booking-status
   "Update booking status"
   [db booking]
   (update-booking-status db (format-insert-data booking)))

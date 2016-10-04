@@ -103,10 +103,10 @@
           (db/fetch-booking db {:id booking-id}))))))
 
 (defn accept-booking [db id]
-  (let [booking (db/fetch-booking db {:id id})]
-    (when booking
-      (db/edit-booking-status db {:id (:id booking) :status :accepted})
-      (db/fetch-booking db {:id (:id booking)}))))
+  (let [{booking-id :id} (db/fetch-booking db {:id id}, {:cols :id})]
+    (when booking-id
+      (db/modify-booking-status db {:id booking-id :status :accepted})
+      (db/fetch-booking db {:id booking-id}))))
 
 (comment
   (def db (store/new-mem-booking-store))
