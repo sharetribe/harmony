@@ -31,7 +31,7 @@ docker-compose up db
 Next, run migrations to provision an empty database:
 
 ```
-lein migratus migrate
+DB_PORT=13306 lein migrate migrate
 ```
 
 After the database is set up you can now start the API service:

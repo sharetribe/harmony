@@ -33,16 +33,7 @@
   :resource-paths ["resources"]
   :clean-targets ^{:protect false} [:target-path :compile-path "test-results" "build.xml"]
 
-  ;; Add Migratus plugin and config here for dev setup. Production and
-  ;; tests use migrations configuration provided in config files.
-  :plugins [[migratus-lein "0.4.1"]]
-  :migratus {:store :database
-             :migration-dir "migrations"
-             :db {:classname "com.mysql.jdbc.Driver"
-                  :subprotocol "mysql"
-                  :subname "//127.0.0.1:13306/harmony_db?createDatabaseIfNotExist=true"
-                  :user "root"
-                  :password "harmony-root"}}
+  :aliases {"migrate" ["run" "-m" "harmony.main.migrations"]}
 
   :profiles {:uberjar {:aot :all}
              :dev {:dependencies [[reloaded.repl "0.2.2"]
