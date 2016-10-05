@@ -135,6 +135,29 @@
     (is (= 200 status))
     (is (= :accepted (get-in body [:data :attributes :status])))))
 
+(deftest reject-booking
+  (let [_ (do-post "/bookables/create"
+                   {}
+                   {:marketplaceId (fixed-uuid :marketplaceId)
+                    :refId (fixed-uuid :refId)
+                    :authorId (fixed-uuid :authorId)})
+        initiate-res (do-post "/bookings/initiate"
+                              {}
+                              {:marketplaceId (fixed-uuid :marketplaceId)
+                               :customerId (fixed-uuid :customerId)
+                               :refId (fixed-uuid :refId)
+                               :initialStatus :paid
+                               :start #inst "2016-09-19T00:00:00.000Z"
+                               :end #inst "2016-09-20T00:00:00.000Z"})
+        booking-id (get-in initiate-res [:body :data :id])
+        {:keys [status body]} (do-post "/bookings/reject"
+                                       {:id booking-id}
+                                       {:actorId (fixed-uuid :providerId)
+                                        :reason "provider rejected"})]
+
+    (is (= 200 status))
+    (is (= :rejected (get-in body [:data :attributes :status])))))
+
 (deftest query-timeslots
   (let [_ (do-post "/bookables/create"
                    {}

@@ -27,6 +27,11 @@
   {:actorId s/Uuid
    :reason s/Str})
 
+(s/defschema RejectBookingCmd
+  "Reject booking"
+  {:actorId s/Uuid
+   :reason s/Str})
+
 (defonce myreq (atom nil))
 
 (comment
@@ -129,6 +134,26 @@
             (-> (response/response "Cannot accept booking.")
                 (response/status http-status/conflict)))))))))
 
+(defn reject-booking [deps]
+  (let [{:keys [db]} deps]
+    (api/annotate
+     {:summary "Reject a booking"
+      :parameters {:query-params {:id s/Uuid}
+                   :body-params RejectBookingCmd}
+      :responses {http-status/ok {:body (resource/created-response-schema types/Booking)}
+                  http-status/conflict {:body s/Str}}
+      :operationId :reject-booking}
+     (interceptor/handler
+      ::reject-booking
+      (fn [req]
+        (let [{:keys [id]} (get req :query-params)
+              booking (bookings/reject-booking db id)]
+          (if booking
+            (response/response
+             (resource/created-response types/Booking booking))
+            (-> (response/response "Cannot reject booking.")
+                (response/status http-status/conflict)))))))))
+
 ;; (def update-availability
 ;;   (api/annotate
 ;;    {:summary "Create and update an availability schedule for a bookable."
@@ -189,6 +214,7 @@
       ["/timeslots/query" :get (conj api-interceptors (query-time-slots deps))]
       ["/bookings/initiate" :post (conj api-interceptors (initiate-booking deps))]
       ["/bookings/accept" :post (conj api-interceptors (accept-booking deps))]
+      ["/bookings/reject" :post (conj api-interceptors (reject-booking deps))]
 
       ["/swagger.json" :get (conj api-interceptors (swagger-json))]
       ["/apidoc/*resource" :get api/swagger-ui]})))

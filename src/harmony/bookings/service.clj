@@ -108,6 +108,12 @@
       (db/modify-booking-status db {:id booking-id :status :accepted})
       (db/fetch-booking db {:id booking-id}))))
 
+(defn reject-booking [db id]
+  (let [{booking-id :id} (db/fetch-booking db {:id id}, {:cols :id})]
+    (when booking-id
+      (db/modify-booking-status db {:id booking-id :status :rejected})
+      (db/fetch-booking db {:id booking-id}))))
+
 (comment
   (def db (store/new-mem-booking-store))
   (create-bookable db {:marketplaceId 1234 :refId 4444 :authorId 27272})
