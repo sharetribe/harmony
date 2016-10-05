@@ -12,4 +12,10 @@ services:
       - convox.start.shift=2000
     ports:
       - "443:8085"
+    environment:
+      - DB_PORT=3306
+      - DB_HOST
+      - DB_USER
+      - DB_PASSWORD
+      - DB_NAME=harmony_db
     command: ["./docker/startup.sh"]

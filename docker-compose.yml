@@ -4,6 +4,9 @@ services:
     build: .
     ports:
       - "8085:8085"
+    environment:
+      - DB_PORT=3306
+      - DB_HOST=db
     command: ["./docker/startup.sh"]
   db:
     image: mysql:5.7
