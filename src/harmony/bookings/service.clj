@@ -44,10 +44,16 @@
         [year month day] ((juxt t/year t/month t/day) dt)]
     (t/date-midnight year month day)))
 
+(defn- active-bookings
+  "Takes bookings and returns active bookings, i.e. bookings that will
+  reserve a timeslot"
+  [bookings]
+  (remove #(= (:status %) :rejected) bookings))
+
 (defn- free-dates [start end bookings]
   (let [booking-is (map #(t/interval (midnight-date-time (:start %))
                                      (midnight-date-time (:end %)))
-                        bookings)
+                        (active-bookings bookings))
         booked? (fn [dt]
                   (let [day-i (t/interval dt (t/plus dt (t/days 1)))]
                     (some #(t/overlaps? day-i %) booking-is)))]

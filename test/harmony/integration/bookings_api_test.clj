@@ -208,6 +208,14 @@
                     :initialStatus :paid
                     :start #inst "2016-09-23T00:00:00.000Z"
                     :end #inst "2016-09-25T00:00:00.000Z"})
+        _ (do-post "/bookings/initiate"
+                   {}
+                   {:marketplaceId (fixed-uuid :marketplaceId)
+                    :customerId (fixed-uuid :customerId)
+                    :refId (fixed-uuid :refId)
+                    :initialStatus :rejected
+                    :start #inst "2016-09-25T00:00:00.000Z"
+                    :end #inst "2016-09-26T00:00:00.000Z"})
         {:keys [status body]} (do-get "/timeslots/query"
                                    {:marketplaceId (fixed-uuid :marketplaceId)
                                     :refId (fixed-uuid :refId)
