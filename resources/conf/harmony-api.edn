@@ -2,7 +2,7 @@
  {:port #config/prop ["PORT" 8085]
   :dev-mode? false}
  :connection-pool
- {:username #config/prop ["DB_USER" "user"]
+ {:username #config/prop ["DB_USER" "root"]
   :password #config/prop ["DB_PASSWORD" "harmony-root"]
   :database-name #config/prop ["DB_NAME" "harmony_db"]
   :server-name #config/prop ["DB_HOST" "127.0.0.1"]
