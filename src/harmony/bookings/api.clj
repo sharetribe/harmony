@@ -25,12 +25,12 @@
 (s/defschema AcceptBookingCmd
   "Accept booking"
   {:actorId s/Uuid
-   :reason s/Str})
+   :reason s/Keyword})
 
 (s/defschema RejectBookingCmd
   "Reject booking"
   {:actorId s/Uuid
-   :reason s/Str})
+   :reason s/Keyword})
 
 (defonce myreq (atom nil))
 
