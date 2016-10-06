@@ -103,6 +103,20 @@ the docker container for db running. By default, the tests use
 harmony_test_db database. The contents of this DB are refreshed after
 each test using the Migratus migrations (resources/migrations/).
 
+## Deploying with Convox
+
+Make sure you're using the right Convox rack:
+
+```bash
+convox rack
+```
+
+Deploy:
+
+```
+convox deploy -f docker-compose.harmony-api.yml -a <app name> --wait
+```
+
 ## License and Copyright
 
 Copyright © 2016 [Sharetribe Ltd](https://www.sharetribe.com).
