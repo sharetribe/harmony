@@ -105,17 +105,23 @@ each test using the Migratus migrations (resources/migrations/).
 
 ## Deploying with Convox
 
-Make sure you're using the right Convox rack:
+1. Make sure you're using the right Convox rack:
 
-```bash
-convox rack
-```
+  ```bash
+  convox rack
+  ```
 
-Deploy:
+1. Deploy:
 
-```
-convox deploy -f docker-compose.harmony-api.yml -a <app name> --wait
-```
+  ```
+  convox deploy -f docker-compose.harmony-api.yml -a <app name> --wait
+  ```
+
+1. Run migrations (if needed):
+
+  ```
+  convox run api lein migrate migrate -a <app name>
+  ```
 
 ## License and Copyright
 
