@@ -38,14 +38,18 @@
   {:dsn schema/Str
    :environment schema/Keyword})
 
+(schema/defschema ApiAuthentication
+  {:disable-authentication schema/Bool
+   :token-secrets schema/Str})
+
 (schema/defschema HarmonyAPI
   {:web-server WebServer
    :connection-pool ConnectionPool
    :migrations Migrations
    :basic-auth BasicAuth
    :sentry Sentry
-   :release schema/Str})
-
+   :release schema/Str
+   :api-authentication ApiAuthentication})
 
 (defn config-harmony-api
   ([] (config-harmony-api :prod))
@@ -77,3 +81,9 @@
 
 (defn release [conf]
   (:release conf))
+
+(defn api-authentication-conf [conf]
+  (let [auth (:api-authentication conf)
+        secrets (clojure.string/split (:token-secrets auth) #",")]
+    ;; Allow only non-empty secret keys
+    (assoc auth :token-secrets (filter seq secrets))))

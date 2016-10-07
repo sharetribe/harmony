@@ -14,4 +14,8 @@
   :minimum-idle #config/prop ["DB_MIN_IDLE" 10]
   :maximum-pool-size #config/prop ["DB_MAX_POOL" 10]}
  :basic-auth
- {:disable-basic-auth true}}
+ {:disable-basic-auth true}
+
+ :api-authentication
+ {:disable-authentication #config/prop ["DISABLE_API_AUTHENTICATION" "true"]
+  :token-secrets #config/prop ["AUTH_TOKEN_SECRETS" "secret_key1,secret_key2"]}}
