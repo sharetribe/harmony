@@ -192,6 +192,15 @@
                  "No bookable found for given marketplaceId and refId.")
                 (response/status http-status/not-found)))))))))
 
+(defn health [deps]
+  (api/annotate
+   {:summary "Health check"
+      :responses {http-status/ok {:body s/Str}} ;; TODO Error status
+      :operationId :health-check}
+     (interceptor/handler
+      ::health
+      (fn [req]
+        (response/response "HealthCheck")))))
 
 (def api-interceptors
   [content-negotiation/negotiate-response
@@ -215,6 +224,8 @@
       ["/bookings/initiate" :post (conj api-interceptors (initiate-booking deps))]
       ["/bookings/accept" :post (conj api-interceptors (accept-booking deps))]
       ["/bookings/reject" :post (conj api-interceptors (reject-booking deps))]
+
+      ["/_health", :get (health deps)]
 
       ["/swagger.json" :get (conj api-interceptors (swagger-json))]
       ["/apidoc/*resource" :get api/swagger-ui]})))
