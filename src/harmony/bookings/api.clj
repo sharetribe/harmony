@@ -7,6 +7,7 @@
             [pedestal-api.core :as api]
             [ring.util.response :as response]
             [ring.util.http-status :as http-status]
+            [clojure.core.memoize :as memo]
 
             [harmony.bookings.types :as types]
             [harmony.bookings.service :as bookings]
@@ -193,29 +194,49 @@
                 (response/status http-status/not-found)))))))))
 
 (s/defschema StatusComponents
-  {:status s/Str
+  {:status s/Keyword
    :info s/Str
    s/Keyword s/Any})
 
 (s/defschema Status
-  {:status s/Str
+  {:status s/Keyword
    :info s/Str
    :components {s/Keyword StatusComponents}})
 
+(defn- database-status [db]
+  {:status :ok
+   :info "MySQL connection ok."})
+
+(defn- overall-status [component-statuses]
+  (let [status (if (every? #{:ok :warn} (map :status component-statuses))
+                 :ok
+                 :error)
+        info (clojure.string/join
+              " "
+              (transduce (comp (map :info)
+                               (remove empty?))
+                         conj
+                         []
+                         component-statuses))]
+    {:status status
+     :info info}))
+
+(defn- poll-components [deps]
+  (let [{:keys [db]} deps
+        db-status (database-status db)]
+    (assoc (overall-status [db-status]) :components {:mysql db-status})))
+
+(def statuses (memo/ttl poll-components :ttl/threshold 5000))
+
 (defn status-json [deps]
-  (let [{:keys [db]} deps]
-    (api/annotate
-     {:summary "Service status details"
-      :responses {http-status/ok {:body Status}} ;; ERROR
-      :operationId :status-json}
-     (interceptor/handler
-      ::status-json
-      (fn [req]
-        (response/response
-          {:status "ok"
-           :info "MySQL connection ok."
-           :components {:mysql {:status "ok"
-                               :info "MySQL connection ok."}}}))))))
+  (api/annotate
+   {:summary "Service status details"
+    :responses {http-status/ok {:body Status}} ;; ERROR
+    :operationId :status-json}
+   (interceptor/handler
+    ::status-json
+    (fn [req]
+      (response/response (statuses deps))))))
 
 (defn health [deps]
   (api/annotate
@@ -225,7 +246,7 @@
      (interceptor/handler
       ::health
       (fn [req]
-        (response/response "HealthCheck")))))
+        (response/response (statuses deps))))))
 
 (def api-interceptors
   [content-negotiation/negotiate-response
@@ -234,6 +255,13 @@
    api/common-body
    (coerce-request)
    (api/validate-response)])
+
+;; Make ELB healthcheck response from _status.json by stripping response body
+;; Implementation of ELB healthcheck might diverge from _status.json in the future
+(def ^:private strip-healthcheck-response-body
+  (interceptor/on-response
+    (fn [res]
+      (assoc res :body "HealthCheck"))))
 
 (defn- make-routes [config deps]
   (swaggered-routes
@@ -250,7 +278,7 @@
       ["/bookings/accept" :post (conj api-interceptors (accept-booking deps))]
       ["/bookings/reject" :post (conj api-interceptors (reject-booking deps))]
 
-      ["/_health", :get (health deps)]
+      ["/_health", :get [strip-healthcheck-response-body (health deps)]]
       ["/status.json", :get (conj api-interceptors (status-json deps))]
 
       ["/swagger.json" :get (conj api-interceptors (swagger-json))]
