@@ -192,6 +192,31 @@
                  "No bookable found for given marketplaceId and refId.")
                 (response/status http-status/not-found)))))))))
 
+(s/defschema StatusComponents
+  {:status s/Str
+   :info s/Str
+   s/Keyword s/Any})
+
+(s/defschema Status
+  {:status s/Str
+   :info s/Str
+   :components {s/Keyword StatusComponents}})
+
+(defn status-json [deps]
+  (let [{:keys [db]} deps]
+    (api/annotate
+     {:summary "Service status details"
+      :responses {http-status/ok {:body Status}} ;; ERROR
+      :operationId :status-json}
+     (interceptor/handler
+      ::status-json
+      (fn [req]
+        (response/response
+          {:status "ok"
+           :info "MySQL connection ok."
+           :components {:mysql {:status "ok"
+                               :info "MySQL connection ok."}}}))))))
+
 (defn health [deps]
   (api/annotate
    {:summary "Health check"
@@ -226,6 +251,7 @@
       ["/bookings/reject" :post (conj api-interceptors (reject-booking deps))]
 
       ["/_health", :get (health deps)]
+      ["/status.json", :get (conj api-interceptors (status-json deps))]
 
       ["/swagger.json" :get (conj api-interceptors (swagger-json))]
       ["/apidoc/*resource" :get api/swagger-ui]})))

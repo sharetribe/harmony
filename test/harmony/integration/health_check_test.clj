@@ -27,13 +27,24 @@
                       (f)
                       (teardown)))
 
-(defn- do-get [endpoint query]
+(defn- do-get [endpoint content-type]
   (client/get (str "http://localhost:8086" endpoint)
-              {:query-params query
+              {:as content-type
+               :accept content-type
                :throw-exceptions false}))
 
 (deftest health-check
-  (let [{:keys [status body]} (do-get "/_health" {})]
+  (let [{:keys [status body]} (do-get "/_health" nil)]
 
     (is (= 200 status))
     (is (= "HealthCheck" body))))
+
+(deftest status
+  (let [{:keys [status body]} (do-get "/status.json" :json)]
+
+    (is (= 200 status))
+    (is (= {:status "ok"
+            :info "MySQL connection ok."
+            :components { :mysql {
+                                  :status "ok"
+                                  :info "MySQL connection ok."}}} body))))
