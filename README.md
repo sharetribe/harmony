@@ -28,9 +28,10 @@ First, start up just the database service. In the project root:
 docker-compose up db
 ```
 
-Next, run migrations to provision an empty database:
+Next, create an empty database and run migrations:
 
 ```
+echo "CREATE DATABASE IF NOT EXISTS harmony_db;" | mysql -u root -p -h 127.0.0.1 --port 13306
 DB_PORT=13306 lein migrate migrate
 ```
 
