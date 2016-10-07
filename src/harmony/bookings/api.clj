@@ -8,6 +8,7 @@
             [ring.util.response :as response]
             [ring.util.http-status :as http-status]
             [clojure.core.memoize :as memo]
+            [hugsql.core :as hugsql]
 
             [harmony.bookings.types :as types]
             [harmony.bookings.service :as bookings]
@@ -16,6 +17,7 @@
             [harmony.service.web.resource :as resource]
             [harmony.service.web-server :refer [IRoutes]]))
 
+(hugsql/def-db-fns "harmony/bookings/db/sql/status.sql" {:quoting :mysql})
 
 (s/defschema CreateBookableCmd
   "Create a new bookable for a referenced object (listing, etc.)"
@@ -194,18 +196,22 @@
                 (response/status http-status/not-found)))))))))
 
 (s/defschema StatusComponents
-  {:status s/Keyword
+  {:status (s/enum :ok :warn :error)
    :info s/Str
    s/Keyword s/Any})
 
 (s/defschema Status
-  {:status s/Keyword
+  {:status (s/enum :ok :warn :error)
    :info s/Str
    :components {s/Keyword StatusComponents}})
 
 (defn- database-status [db]
-  {:status :ok
-   :info "MySQL connection ok."})
+  (let [count (:count (count-bookings db))
+        success (integer? count)
+        status (if success :ok :error)
+        info (if success "MySQL connection ok." "MySQL couldn't response to health check query")]
+    {:status status
+     :info info}))
 
 (defn- overall-status [component-statuses]
   (let [status (if (every? #{:ok :warn} (map :status component-statuses))
