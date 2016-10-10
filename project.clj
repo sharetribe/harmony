@@ -28,7 +28,10 @@
                  [ch.qos.logback/logback-classic "1.1.7" :exclusions [org.slf4j/slf4j-api]]
                  [org.slf4j/jul-to-slf4j "1.7.21"]
                  [org.slf4j/jcl-over-slf4j "1.7.21"]
-                 [org.slf4j/log4j-over-slf4j "1.7.21"]]
+                 [org.slf4j/log4j-over-slf4j "1.7.21"]
+
+                 ;; Error tracking
+                 [raven-clj "1.4.3"]]
 
   :min-lein-version "2.5.0"
   :uberjar-name "sharetribe-harmony.jar"

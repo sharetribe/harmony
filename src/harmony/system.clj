@@ -7,6 +7,7 @@
             [harmony.service.web.basic-auth :as basic-auth]
             [harmony.bookings.api :as bookings.api]
             [harmony.errors :as errors]
+            [harmony.service.sentry :as sentry]
             [harmony.health.api :as health.api]))
 
 (defn harmony-api [config]
@@ -26,7 +27,7 @@
                            (swaggered-routes-coll/new-swaggered-routes-coll)
                            {:health-api :health-api
                             :bookings-api :bookings-api})
-   :errors-client (errors/map->EmptyReporter {})
+   :errors-client (sentry/new-sentry-client (config/sentry-conf config))
    :web-server (component/using
                 (service.web-server/new-web-server (config/web-server-conf config))
                 {:routes :swaggered-routes-coll
