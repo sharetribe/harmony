@@ -7,17 +7,13 @@
             [pedestal-api.core :as api]
             [ring.util.response :as response]
             [ring.util.http-status :as http-status]
-            [clojure.core.memoize :as memo]
-            [hugsql.core :as hugsql]
 
             [harmony.bookings.types :as types]
             [harmony.bookings.service :as bookings]
             [harmony.service.web.content-negotiation :as content-negotiation]
-            [harmony.service.web.swagger :refer [swaggered-routes swagger-json coerce-request]]
+            [harmony.service.web.swagger :refer [coerce-request]]
             [harmony.service.web.resource :as resource]
             [harmony.service.web-server :refer [IRoutes]]))
-
-(hugsql/def-db-fns "harmony/bookings/db/sql/status.sql" {:quoting :mysql})
 
 (s/defschema CreateBookableCmd
   "Create a new bookable for a referenced object (listing, etc.)"
@@ -195,65 +191,6 @@
                  "No bookable found for given marketplaceId and refId.")
                 (response/status http-status/not-found)))))))))
 
-(s/defschema StatusComponents
-  {:status (s/enum :ok :warn :error)
-   :info s/Str
-   s/Keyword s/Any})
-
-(s/defschema Status
-  {:status (s/enum :ok :warn :error)
-   :info s/Str
-   :components {s/Keyword StatusComponents}})
-
-(defn- database-status [db]
-  (let [count (:count (count-bookings db))
-        success (integer? count)
-        status (if success :ok :error)
-        info (if success "MySQL connection ok." "MySQL couldn't response to health check query")]
-    {:status status
-     :info info}))
-
-(defn- overall-status [component-statuses]
-  (let [status (if (every? #{:ok :warn} (map :status component-statuses))
-                 :ok
-                 :error)
-        info (clojure.string/join
-              " "
-              (transduce (comp (map :info)
-                               (remove empty?))
-                         conj
-                         []
-                         component-statuses))]
-    {:status status
-     :info info}))
-
-(defn- poll-components [deps]
-  (let [{:keys [db]} deps
-        db-status (database-status db)]
-    (assoc (overall-status [db-status]) :components {:mysql db-status})))
-
-(def statuses (memo/ttl poll-components :ttl/threshold 5000))
-
-(defn status-json [deps]
-  (api/annotate
-   {:summary "Service status details"
-    :responses {http-status/ok {:body Status}} ;; ERROR
-    :operationId :status-json}
-   (interceptor/handler
-    ::status-json
-    (fn [req]
-      (response/response (statuses deps))))))
-
-(defn health [deps]
-  (api/annotate
-   {:summary "Health check"
-      :responses {http-status/ok {:body s/Str}} ;; TODO Error status
-      :operationId :health-check}
-     (interceptor/handler
-      ::health
-      (fn [req]
-        (response/response (statuses deps))))))
-
 (def api-interceptors
   [content-negotiation/negotiate-response
    api/error-responses
@@ -262,33 +199,15 @@
    (coerce-request)
    (api/validate-response)])
 
-;; Make ELB healthcheck response from _status.json by stripping response body
-;; Implementation of ELB healthcheck might diverge from _status.json in the future
-(def ^:private strip-healthcheck-response-body
-  (interceptor/on-response
-    (fn [res]
-      (assoc res :body "HealthCheck"))))
-
 (defn- make-routes [config deps]
-  (swaggered-routes
-   {:info {:title "The Harmony Bookings API"
-           :description "API for managing resource availability and
-           making bookings."
-           :version "1.0"}}
-   (route/expand-routes
-    #{["/bookables/create" :post (conj api-interceptors (create-bookable deps))]
-      ;; ["/bookables/updateAvailability" :post update-availability]
-      ["/bookables/show" :get (conj api-interceptors (show-bookable deps))]
-      ["/timeslots/query" :get (conj api-interceptors (query-time-slots deps))]
-      ["/bookings/initiate" :post (conj api-interceptors (initiate-booking deps))]
-      ["/bookings/accept" :post (conj api-interceptors (accept-booking deps))]
-      ["/bookings/reject" :post (conj api-interceptors (reject-booking deps))]
-
-      ["/_health", :get [strip-healthcheck-response-body (health deps)]]
-      ["/status.json", :get (conj api-interceptors (status-json deps))]
-
-      ["/swagger.json" :get (conj api-interceptors (swagger-json))]
-      ["/apidoc/*resource" :get api/swagger-ui]})))
+  (route/expand-routes
+   #{["/bookables/create" :post (conj api-interceptors (create-bookable deps))]
+     ;; ["/bookables/updateAvailability" :post update-availability]
+     ["/bookables/show" :get (conj api-interceptors (show-bookable deps))]
+     ["/timeslots/query" :get (conj api-interceptors (query-time-slots deps))]
+     ["/bookings/initiate" :post (conj api-interceptors (initiate-booking deps))]
+     ["/bookings/accept" :post (conj api-interceptors (accept-booking deps))]
+     ["/bookings/reject" :post (conj api-interceptors (reject-booking deps))]}))
 
 (defrecord BookingsAPI [config db]
   IRoutes
