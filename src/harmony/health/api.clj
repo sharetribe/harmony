@@ -8,15 +8,13 @@
             [ring.util.response :as response]
             [ring.util.http-status :as http-status]
             [clojure.core.memoize :as memo]
-            [hugsql.core :as hugsql]
+            [clojure.java.jdbc :as jdbc]
 
             [harmony.service.web.content-negotiation :as content-negotiation]
             [harmony.service.web.swagger :refer [swaggered-routes swagger-json coerce-request]]
             [harmony.service.web.resource :as resource]
             [harmony.service.web-server :refer [IRoutes]]
             ))
-
-(hugsql/def-db-fns "harmony/bookings/db/sql/status.sql" {:quoting :mysql})
 
 (s/defschema StatusComponents
   {:status (s/enum :ok :warn :error)
@@ -28,8 +26,11 @@
    :info s/Str
    :components {s/Keyword StatusComponents}})
 
+(defn- count-bookings [db]
+  (:count (first (jdbc/query db ["select count(id) as count from bookings"]))))
+
 (defn- database-status [db]
-  (let [count (:count (count-bookings db))
+  (let [count (count-bookings db)
         success (integer? count)
         status (if success :ok :error)
         info (if success "MySQL connection ok." "MySQL couldn't response to health check query")]
