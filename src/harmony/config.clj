@@ -29,10 +29,15 @@
         :user schema/Str
         :password schema/Str}})
 
+(schema/defschema BasicAuth
+  {:realm schema/Str
+   :credentials {schema/Keyword schema/Str}})
+
 (schema/defschema HarmonyAPI
   {:web-server WebServer
    :connection-pool ConnectionPool
-   :migrations Migrations})
+   :migrations Migrations
+   :basic-auth BasicAuth})
 
 
 (defn config-harmony-api
@@ -56,3 +61,6 @@
 
 (defn migrations-conf [conf]
   (:migrations conf))
+
+(defn basic-auth-conf [conf]
+  (:basic-auth conf))

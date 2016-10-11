@@ -10,6 +10,7 @@
             [clojure.core.memoize :as memo]
             [clojure.java.jdbc :as jdbc]
 
+            [harmony.service.web.basic-auth :as basic-auth]
             [harmony.service.web.content-negotiation :as content-negotiation]
             [harmony.service.web.swagger :refer [swaggered-routes swagger-json coerce-request]]
             [harmony.service.web.resource :as resource]
@@ -78,13 +79,9 @@
       (fn [req]
         (response/response (statuses deps))))))
 
-(def api-interceptors
-  [content-negotiation/negotiate-response
-   api/error-responses
-   (api/body-params)
-   api/common-body
-   (coerce-request)
-   (api/validate-response)])
+(defn basic-auth-interceptors [basic-auth-backend]
+  [(basic-auth/authenticate basic-auth-backend)
+   (basic-auth/authorize basic-auth-backend)])
 
 ;; Make ELB healthcheck response from _status.json by stripping response body
 ;; Implementation of ELB healthcheck might diverge from _status.json in the future
@@ -94,14 +91,20 @@
       (assoc res :body "HealthCheck"))))
 
 (defn- make-routes [config deps]
-  (route/expand-routes
-   #{["/_health", :get [strip-healthcheck-response-body (health deps)]]
-     ["/status.json", :get (conj api-interceptors (status-json deps))]}))
+  (let [{:keys [basic-auth-backend]} deps]
+    (route/expand-routes
+     #{["/_health", :get [http/json-body
+                          strip-healthcheck-response-body
+                          (health deps)]]
+       ["/status.json", :get [http/json-body
+                              (basic-auth/authenticate basic-auth-backend)
+                              (basic-auth/authorize basic-auth-backend)
+                              (status-json deps)]]})))
 
-(defrecord HealthAPI [config db]
+(defrecord HealthAPI [config db basic-auth-backend]
   IRoutes
   (build-routes [_]
-    (make-routes config {:db db})))
+    (make-routes config {:db db :basic-auth-backend basic-auth-backend})))
 
 (defn new-health-api [config]
   (map->HealthAPI {:config config}))
