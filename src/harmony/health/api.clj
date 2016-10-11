@@ -96,10 +96,10 @@
      #{["/_health", :get [http/json-body
                           strip-healthcheck-response-body
                           (health deps)]]
-       ["/status.json", :get [http/json-body
-                              (basic-auth/authenticate basic-auth-backend)
-                              (basic-auth/authorize basic-auth-backend)
-                              (status-json deps)]]})))
+       ["/_status.json", :get [http/json-body
+                               (basic-auth/authenticate basic-auth-backend)
+                               (basic-auth/authorize basic-auth-backend)
+                               (status-json deps)]]})))
 
 (defrecord HealthAPI [config db basic-auth-backend]
   IRoutes
