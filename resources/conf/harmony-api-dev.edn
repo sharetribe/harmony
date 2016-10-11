@@ -12,4 +12,6 @@
   :validation-timeout #config/prop ["DB_VALID_TIMEOUT" 5000]
   :idle-timeout #config/prop ["DB_IDLE_TIMEOUT" 600000]
   :minimum-idle #config/prop ["DB_MIN_IDLE" 10]
-  :maximum-pool-size #config/prop ["DB_MAX_POOL" 10]}}
+  :maximum-pool-size #config/prop ["DB_MAX_POOL" 10]}
+ :basic-auth
+ {:disable-basic-auth true}}

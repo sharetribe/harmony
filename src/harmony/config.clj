@@ -30,7 +30,8 @@
         :password schema/Str}})
 
 (schema/defschema BasicAuth
-  {:realm schema/Str
+  {:disable-basic-auth schema/Bool
+   :realm schema/Str
    :credentials {schema/Keyword schema/Str}})
 
 (schema/defschema HarmonyAPI

@@ -11,7 +11,7 @@
 (defn harmony-api [config]
   (component/system-map
    :db-conn-pool (service.conn-pool/new-connection-pool (config/db-conn-pool-conf config))
-   :basic-auth-backend (if (:dev-mode? (config/web-server-conf config))
+   :basic-auth-backend (if (:disable-basic-auth (config/basic-auth-conf config))
                          (basic-auth/new-no-auth-backend)
                          (basic-auth/new-backend (config/basic-auth-conf config)))
    :health-api (component/using
