@@ -22,7 +22,7 @@
                  [migratus "0.8.28"]
 
                  ;; Authentication
-                 [buddy/buddy-auth "1.1.0"]
+                 [buddy/buddy-auth "1.2.0"]
 
                  ;; Logging integration
                  [ch.qos.logback/logback-classic "1.1.7" :exclusions [org.slf4j/slf4j-api]]
