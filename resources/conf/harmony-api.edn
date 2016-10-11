@@ -12,6 +12,10 @@
   :idle-timeout #config/prop ["DB_IDLE_TIMEOUT" 600000]
   :minimum-idle #config/prop ["DB_MIN_IDLE" 10]
   :maximum-pool-size #config/prop ["DB_MAX_POOL" 10]}
+ :basic-auth
+ {:disable-basic-auth #config/prop ["DISABLE_BASIC_AUTH" "false"]
+  :realm #config/prop ["BASIC_AUTH_REALM" "Harmony-api"]
+  :credentials {#config/prop ["BASIC_AUTH_USER" "user"] #config/prop ["BASIC_AUTH_PASSWORD" "secret"]}}
 
  ;; Note! For leiningen plugin the dev mode config is in project.clj
  :migrations

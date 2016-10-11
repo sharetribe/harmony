@@ -21,6 +21,9 @@
                  [hikari-cp "1.7.3"]
                  [migratus "0.8.28"]
 
+                 ;; Authentication
+                 [buddy/buddy-auth "1.2.0"]
+
                  ;; Logging integration
                  [ch.qos.logback/logback-classic "1.1.7" :exclusions [org.slf4j/slf4j-api]]
                  [org.slf4j/jul-to-slf4j "1.7.21"]

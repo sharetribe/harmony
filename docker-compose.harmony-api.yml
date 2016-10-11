@@ -10,6 +10,8 @@ services:
       - convox.port.443.protocol=https
       - convox.idle.timeout=60
       - convox.start.shift=2000
+      - convox.health.path=/_health
+      - convox.health.timeout=5
     ports:
       - "443:8085"
     environment:
