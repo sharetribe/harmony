@@ -1,22 +1,14 @@
 (ns harmony.service.web.swaggered-routes-coll
   (:require [io.pedestal.http.route.definition :as definition]
             [io.pedestal.http.route :as route]
+            [io.pedestal.http :as http]
             [harmony.service.web-server :as web-server]
             [pedestal-api.core :as api]
-            [harmony.service.web.content-negotiation :as content-negotiation]
-            [harmony.service.web.swagger :refer [swaggered-routes swagger-json coerce-request]]))
-
-(def api-interceptors
-  [content-negotiation/negotiate-response
-   api/error-responses
-   (api/body-params)
-   api/common-body
-   (coerce-request)
-   (api/validate-response)])
+            [harmony.service.web.swagger :refer [swaggered-routes swagger-json]]))
 
 (defn- make-routes []
   (route/expand-routes
-   #{["/swagger.json" :get (conj api-interceptors (swagger-json))]
+   #{["/swagger.json" :get [http/json-body (swagger-json)]]
      ["/apidoc/*resource" :get api/swagger-ui]}))
 
 (defrecord SwaggeredRoutesColl []
