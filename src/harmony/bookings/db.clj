@@ -55,11 +55,26 @@
       {:bookable nil :active-plan nil})))
 
 (defn create-booking
-  "Create a new booking"
+  "Create a new booking iff it doesn't overlap with an existing
+  booking."
   [db booking]
-  (let [booking-id (uuid/v1)]
-    (insert-booking db (format-insert-data (assoc booking :id booking-id)))
-    booking-id))
+  (let [{:keys [bookableId start end]} booking
+        booking-id (uuid/v1)
+        qp (format-params
+            {:bookableId bookableId
+             :start start
+             :end end
+             :statuses #{:initial :paid :accepted}}
+            {:cols #{:id}})]
+    (jdbc/with-db-transaction [tx db {:isolation :repeatable-read}]
+      (let [free? (-> (select-for-update-bookings-by-bookable-start-end-status
+                       tx qp)
+                      empty?)]
+        (if free?
+          (do (insert-booking tx (format-insert-data
+                                  (assoc booking :id booking-id)))
+              booking-id)
+          nil)))))
 
 (defn fetch-booking
   "Fetch a booking by id."
@@ -101,8 +116,7 @@
   (def b {:marketplaceId m-id
           :refId ref-id
           :authorId (uuid/v1)
-          :unitType :day}
-)
+          :unitType :day})
   (def p {:marketplaceId m-id
           :seats 1
           :planMode :available})
@@ -120,5 +134,18 @@
   b-ret
 
   bookable-by-ref
-  )
 
+
+  (let [db (:db-conn-pool reloaded.repl/system)
+        qp (format-params
+            {:bookableId #uuid "f3385740-85a6-11e6-9df2-91438e52b283"
+             :start #inst "2016-10-07"
+             :end #inst "2016-10-08"
+             :statuses #{:initial :paid :accepted}
+             }
+            {:cols #{:id}})]
+    #_(select-bookings-by-bookable-start-end db qp)
+    #_(select-for-update-bookings-by-bookable-start-end-status-sqlvec qp)
+    (select-for-update-bookings-by-bookable-start-end-status db qp)
+    )
+  )

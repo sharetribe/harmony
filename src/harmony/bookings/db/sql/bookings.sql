@@ -46,3 +46,17 @@ AND (
   OR
   (start <= :start AND end >= :end)
 );
+
+-- :name select-for-update-bookings-by-bookable-start-end-status :? :*
+-- :doc Get bookables by bookableId that overlaps with [start, end]
+select :i*:cols from bookings
+where bookable_id = :bookableId
+AND status in (:v*:statuses)
+AND (
+  (end > :start AND end <= :end)
+  OR
+  (start >= :start AND start < :end)
+  OR
+  (start <= :start AND end >= :end)
+)
+for update;
