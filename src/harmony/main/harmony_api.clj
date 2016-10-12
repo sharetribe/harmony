@@ -2,6 +2,7 @@
   (:require [com.stuartsierra.component :as component]
             [harmony.config :as config]
             [harmony.system :as system]
+            [harmony.errors :as errors]
             [harmony.util.log :as log]))
 
 (def system nil)
@@ -13,18 +14,13 @@
   (component/stop-system system)
   (log/info :harmony-api :shut-down))
 
-(defn- setup-error-handler []
-  (Thread/setDefaultUncaughtExceptionHandler
-   (reify Thread$UncaughtExceptionHandler
-     (uncaughtException [_ thread ex]
-       (log/error :harmony-api
-                  :uncaught-error
-                  {:exception ex
-                   :thread (.getName thread)})))))
+(defn- setup-error-handler [errors-client]
+  (let [ex-handler (errors/custom-exception-handler errors-client)]
+    (Thread/setDefaultUncaughtExceptionHandler ex-handler)))
 
 (defn -main []
   (let [harmony-api (system/harmony-api (config/config-harmony-api :prod))]
-    (setup-error-handler)
+    (setup-error-handler (:errors-client harmony-api))
     (set-system (component/start-system harmony-api)))
 
   (.addShutdownHook (Runtime/getRuntime)
