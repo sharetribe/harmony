@@ -40,7 +40,7 @@
     (is (= "HealthCheck" body))))
 
 (deftest status
-  (let [{:keys [status body]} (do-get "/status.json" :json)]
+  (let [{:keys [status body]} (do-get "/_status.json" :json)]
 
     (is (= 200 status))
     (is (= {:status "ok"
