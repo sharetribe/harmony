@@ -1,5 +1,7 @@
 # Harmony
 
+[![CircleCI](https://circleci.com/gh/sharetribe/harmony/tree/master.svg?style=svg&circle-token=043fa482e17e0b7a80641714c91b41a6bc0d3a40)](https://circleci.com/gh/sharetribe/harmony/tree/master)
+
 The Sharetribe Harmony backend for marketplace transaction functionalities.
 
 ## Requirements
