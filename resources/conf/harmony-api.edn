@@ -17,7 +17,8 @@
   :realm #config/prop ["BASIC_AUTH_REALM" "Harmony-api"]
   :credentials {#config/prop ["BASIC_AUTH_USER" "user"] #config/prop ["BASIC_AUTH_PASSWORD" "secret"]}}
  :sentry
- {:dsn #config/prop ["SENTRY_DSN" ""]}
+ {:dsn #config/prop ["SENTRY_DSN" ""]
+  :environment #config/prop ["SENTRY_ENVIRONMENT" "production"]}
 
  ;; Note! For leiningen plugin the dev mode config is in project.clj
  :migrations

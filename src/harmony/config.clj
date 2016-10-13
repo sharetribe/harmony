@@ -35,7 +35,8 @@
    :credentials {schema/Keyword schema/Str}})
 
 (schema/defschema Sentry
-  {:dsn schema/Str})
+  {:dsn schema/Str
+   :environment schema/Keyword})
 
 (schema/defschema HarmonyAPI
   {:web-server WebServer

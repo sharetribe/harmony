@@ -4,20 +4,20 @@
             [raven-clj.interfaces :as interfaces]
             [harmony.errors :as errors]))
 
-(defrecord SentryReporter [dsn]
+(defrecord SentryReporter [dsn environment]
   errors/IErrorReporter
   (report [_ ex]
     (capture dsn
-             (cond-> {}
+             (cond-> {:environment environment}
                (instance? Throwable ex) (interfaces/stacktrace ex))))
 
   (report-request [_ req ex]
     (capture dsn
-             (cond-> {}
+             (cond-> {:environment environment}
                req (interfaces/http req identity)
                (instance? Throwable ex) (interfaces/stacktrace ex)))))
 
-(defn new-sentry-client [{:keys [dsn]}]
+(defn new-sentry-client [{:keys [dsn] :as conf}]
   (if (not (clojure.string/blank? dsn))
-    (map->SentryReporter {:dsn dsn})
+    (map->SentryReporter conf)
     (errors/map->EmptyReporter {})))
