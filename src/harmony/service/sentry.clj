@@ -8,13 +8,14 @@
   errors/IErrorReporter
   (report [_ ex]
     (capture dsn
-             (interfaces/stacktrace {} ex)))
+             (cond-> {}
+               (instance? Throwable ex) (interfaces/stacktrace ex))))
 
   (report-request [_ req ex]
     (capture dsn
-             (-> {}
-                 (interfaces/http req identity)
-                 (interfaces/stacktrace ex)))))
+             (cond-> {}
+               req (interfaces/http req identity)
+               (instance? Throwable ex) (interfaces/stacktrace ex)))))
 
 (defn new-sentry-client [{:keys [dsn]}]
   (if (not (clojure.string/blank? dsn))
