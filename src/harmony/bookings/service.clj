@@ -39,16 +39,10 @@
               {:marketplaceId m-id :refId ref-id})]
     (assoc bookable :activePlan active-plan)))
 
-(defn- active-bookings
-  "Takes bookings and returns active bookings, i.e. bookings that will
-  reserve a timeslot"
-  [bookings]
-  (remove #(= (:status %) :rejected) bookings))
-
 (defn- free-dates [start end bookings]
   (let [booking-is (map #(t/interval (time/midnight-date-time (:start %))
                                      (time/midnight-date-time (:end %)))
-                        (active-bookings bookings))
+                        bookings)
         booked? (fn [dt]
                   (let [day-i (t/interval dt (t/plus dt (t/days 1)))]
                     (some #(t/overlaps? day-i %) booking-is)))]
@@ -80,8 +74,9 @@
                                 {:cols :id})]
     (when bookable-id
       (let [bookings (db/fetch-bookings db {:bookableId bookable-id
-                                                     :start start
-                                                     :end end})]
+                                            :statuses #{:initial :paid :accepted}
+                                            :start start
+                                            :end end})]
         (->> (free-dates start end bookings)
              (map #(time-slot refId %)))))))
 

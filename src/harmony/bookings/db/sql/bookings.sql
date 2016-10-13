@@ -35,10 +35,13 @@ where id = :id;
 select :i*:cols from bookings
 where id = :id;
 
--- :name select-bookings-by-bookable-start-end :? :*
--- :doc Get bookables by bookableId, start end end
+-- :name select-bookings-by-bookable-start-end-status :? :*
+-- :doc Get bookables by bookableId, start, end, and optionally status
 select :i*:cols from bookings
 where bookable_id = :bookableId
+/*~ (when (seq (:statuses params)) */
+AND status in (:v*:statuses)
+/*~ ) ~*/
 AND (
   (end > :start AND end <= :end)
   OR

@@ -89,7 +89,7 @@
   {:marketplaceId s/Uuid
    :refId s/Uuid
    :customerId s/Uuid
-   :initialStatus (s/enum :initial :paid)
+   :initialStatus (s/enum :initial :paid :accepted :rejected)
    :start s/Inst
    :end s/Inst})
 

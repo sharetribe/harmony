@@ -230,7 +230,7 @@
                    {:marketplaceId (fixed-uuid :marketplaceId)
                     :customerId (fixed-uuid :customerId)
                     :refId (fixed-uuid :refId)
-                    :initialStatus :paid
+                    :initialStatus :accepted
                     :start #inst "2016-09-23T00:00:00.000Z"
                     :end #inst "2016-09-25T00:00:00.000Z"})
         _ (do-post "/bookings/initiate"
