@@ -90,9 +90,9 @@
 (defn fetch-bookings
   "Fetch a set of bookings with given parameters."
   ([db query-params] (fetch-bookings db query-params {}))
-  ([db {:keys [:bookableId :start :end]} {:keys [cols]}]
+  ([db {:keys [bookableId start end statuses]} {:keys [cols]}]
    (let [qp (format-params
-             {:bookableId bookableId :start start :end end}
+             {:bookableId bookableId :start start :end end :statuses statuses}
              {:cols cols :default-cols #{:id
                                          :marketplaceId
                                          :bookableId
@@ -103,7 +103,7 @@
                                          :end}})]
      (map
       #(format-result % {:as-keywords #{:status}})
-      (select-bookings-by-bookable-start-end db qp)))))
+      (select-bookings-by-bookable-start-end-status db qp)))))
 
 (defn modify-booking-status
   "Update booking status"

@@ -2,6 +2,7 @@
   (:require [clj-time.core :as t]
             [clj-time.periodic :as periodic]
             [clj-time.coerce :as coerce]
+            [harmony.util.time :as time]
             [harmony.bookings.db :as db]))
 
 (defn- bookable-defaults [m-id ref-id author-id]
@@ -38,31 +39,16 @@
               {:marketplaceId m-id :refId ref-id})]
     (assoc bookable :activePlan active-plan)))
 
-
-(defn- midnight-date-time [inst]
-  (let [dt (coerce/to-date-time inst)
-        [year month day] ((juxt t/year t/month t/day) dt)]
-    (t/date-midnight year month day)))
-
-(defn- midnight-date [inst]
-  (-> inst midnight-date-time coerce/to-date))
-
-(defn- active-bookings
-  "Takes bookings and returns active bookings, i.e. bookings that will
-  reserve a timeslot"
-  [bookings]
-  (remove #(= (:status %) :rejected) bookings))
-
 (defn- free-dates [start end bookings]
-  (let [booking-is (map #(t/interval (midnight-date-time (:start %))
-                                     (midnight-date-time (:end %)))
-                        (active-bookings bookings))
+  (let [booking-is (map #(t/interval (time/midnight-date-time (:start %))
+                                     (time/midnight-date-time (:end %)))
+                        bookings)
         booked? (fn [dt]
                   (let [day-i (t/interval dt (t/plus dt (t/days 1)))]
                     (some #(t/overlaps? day-i %) booking-is)))]
     (->> (periodic/periodic-seq
-          (midnight-date-time start)
-          (midnight-date-time end)
+          (time/midnight-date-time start)
+          (time/midnight-date-time end)
           (t/days 1))
          (remove booked?))))
 
@@ -88,8 +74,9 @@
                                 {:cols :id})]
     (when bookable-id
       (let [bookings (db/fetch-bookings db {:bookableId bookable-id
-                                                     :start start
-                                                     :end end})]
+                                            :statuses #{:initial :paid :accepted}
+                                            :start start
+                                            :end end})]
         (->> (free-dates start end bookings)
              (map #(time-slot refId %)))))))
 
@@ -98,8 +85,8 @@
         booking-cmd]
     {:marketplaceId marketplaceId
      :customerId customerId
-     :start (midnight-date start)
-     :end (midnight-date end)
+     :start (time/midnight-date start)
+     :end (time/midnight-date end)
      :bookableId bookable-id
      :seats 1
      :status initialStatus}))
