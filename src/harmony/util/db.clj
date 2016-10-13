@@ -43,8 +43,16 @@
     [k (keyword v)]
     [k v]))
 
-(defn- stringify [v] (if (keyword? v) (name v) v))
-
+(defn- stringify
+  "Convert keyword value v, or keywords in value v if v is a list, a
+  seq or a vec, to strings."
+  [v]
+  (cond
+    (keyword? v) (name v)
+    (list? v)    (into (empty v) (map stringify v))
+    (set? v)     (into (empty v) (map stringify v))
+    (vector? v)  (into (empty v) (map stringify v))
+    :else        v))
 
 (defn format-result
   "Format a raw result pulled from DB to be returned as a resource
@@ -65,20 +73,23 @@
   strings.."
   [insert-data]
   (some-> insert-data
-          (map-values uuid-to-bytes)
-          (map-values stringify)))
+          (map-values stringify)
+          (map-values uuid-to-bytes)))
 
 (defn format-params
   "Build a query parameters map from the given params map and column
   specification. All UUID values in parameter values are converted to
-  sorted byte arrays. A column spefication is created and returned
-  under key :cols using either the caller provided cols set or if that
-  is omitted a default columns set. If the column spefication is
-  omitted from parameters altogether then it's also omitted from
-  resulting query parameters map."
+  sorted byte arrays. All keywords are converted to strings and
+  collections of keywords into collections of strings. A column
+  spefication is created and returned under key :cols using either the
+  caller provided cols set or if that is omitted a default columns
+  set. If the column spefication is omitted from parameters altogether
+  then it's also omitted from resulting query parameters map."
   ([params] (format-params params nil))
   ([params {:keys [cols default-cols]}]
-   (let [p (map-values params uuid-to-bytes)]
+   (let [p (-> params
+               (map-values stringify)
+               (map-values uuid-to-bytes))]
      (cond
        (keyword? cols)          (assoc p :cols [(snake-case-str cols)])
        (seq cols)               (assoc p :cols (map snake-case-str cols))

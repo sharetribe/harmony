@@ -44,6 +44,9 @@
         [year month day] ((juxt t/year t/month t/day) dt)]
     (t/date-midnight year month day)))
 
+(defn- midnight-date [inst]
+  (-> inst midnight-date-time coerce/to-date))
+
 (defn- active-bookings
   "Takes bookings and returns active bookings, i.e. bookings that will
   reserve a timeslot"
@@ -91,11 +94,15 @@
              (map #(time-slot refId %)))))))
 
 (defn- booking-defaults [booking-cmd bookable-id]
-  (-> booking-cmd
-      (select-keys [:marketplaceId :customerId :start :end])
-      (assoc :bookableId bookable-id
-             :seats 1
-             :status (:initialStatus booking-cmd))))
+  (let [{:keys [:marketplaceId :customerId :start :end :initialStatus]}
+        booking-cmd]
+    {:marketplaceId marketplaceId
+     :customerId customerId
+     :start (midnight-date start)
+     :end (midnight-date end)
+     :bookableId bookable-id
+     :seats 1
+     :status initialStatus}))
 
 (defn initiate-booking [db cmd]
   (let [{:keys [marketplaceId refId]} cmd]
@@ -106,7 +113,9 @@
       (when bookable-id
         (let [booking (booking-defaults cmd bookable-id)
               booking-id (db/create-booking db booking)]
-          (db/fetch-booking db {:id booking-id}))))))
+          (if booking-id
+            (db/fetch-booking db {:id booking-id})
+            nil))))))
 
 (defn accept-booking [db id]
   (let [{booking-id :id} (db/fetch-booking db {:id id}, {:cols :id})]

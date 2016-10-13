@@ -135,6 +135,31 @@
     (is (= 200 status))
     (is (= :accepted (get-in body [:data :attributes :status])))))
 
+(deftest attempt-doublebooking
+  (let [_ (do-post "/bookables/create"
+                   {}
+                   {:marketplaceId (fixed-uuid :marketplaceId)
+                    :refId (fixed-uuid :refId)
+                    :authorId (fixed-uuid :authorId)})
+        first (do-post "/bookings/initiate"
+                   {}
+                   {:marketplaceId (fixed-uuid :marketplaceId)
+                    :customerId (fixed-uuid :customerId)
+                    :refId (fixed-uuid :refId)
+                    :initialStatus :paid
+                    :start #inst "2016-09-19T00:00:00.000Z"
+                    :end #inst "2016-09-20T00:00:00.000Z"})
+        double (do-post "/bookings/initiate"
+                     {}
+                     {:marketplaceId (fixed-uuid :marketplaceId)
+                      :customerId (fixed-uuid :customerId)
+                      :refId (fixed-uuid :refId)
+                      :initialStatus :paid
+                      :start #inst "2016-09-19T00:00:00.000Z"
+                      :end #inst "2016-09-20T00:00:00.000Z"})]
+    (is (= 201 (:status first)))
+    (is (= 409 (:status double)))))
+
 (deftest reject-booking
   (let [_ (do-post "/bookables/create"
                    {}
