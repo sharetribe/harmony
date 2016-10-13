@@ -8,8 +8,7 @@
   errors/IErrorReporter
   (report [_ ex]
     (capture dsn
-             (-> {}
-                 (interfaces/stacktrace ex))))
+             (interfaces/stacktrace {} ex)))
 
   (report-request [_ req ex]
     (capture dsn
