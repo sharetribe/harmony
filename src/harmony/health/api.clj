@@ -79,6 +79,16 @@
       (fn [req]
         (response/response (statuses deps))))))
 
+(defn error []
+  (api/annotate
+   {:summary "Trigger error"
+      :responses {http-status/internal-server-error {:body s/Str}}
+      :operationId :error}
+     (interceptor/handler
+      ::error
+      (fn [req]
+        (throw (Exception. "Test exception"))))))
+
 (defn basic-auth-interceptors [basic-auth-backend]
   [(basic-auth/authenticate basic-auth-backend)
    (basic-auth/authorize basic-auth-backend)])
@@ -96,6 +106,9 @@
      #{["/_health", :get [http/json-body
                           strip-healthcheck-response-body
                           (health deps)]]
+       ["/_error", :get [(basic-auth/authenticate basic-auth-backend)
+                         (basic-auth/authorize basic-auth-backend)
+                         (error)]]
        ["/_status.json", :get [http/json-body
                                (basic-auth/authenticate basic-auth-backend)
                                (basic-auth/authorize basic-auth-backend)
