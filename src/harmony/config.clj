@@ -34,11 +34,15 @@
    :realm schema/Str
    :credentials {schema/Keyword schema/Str}})
 
+(schema/defschema Sentry
+  {:dsn schema/Str})
+
 (schema/defschema HarmonyAPI
   {:web-server WebServer
    :connection-pool ConnectionPool
    :migrations Migrations
-   :basic-auth BasicAuth})
+   :basic-auth BasicAuth
+   :sentry Sentry})
 
 
 (defn config-harmony-api
@@ -65,3 +69,6 @@
 
 (defn basic-auth-conf [conf]
   (:basic-auth conf))
+
+(defn sentry-conf [conf]
+  (:sentry conf))
