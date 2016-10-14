@@ -7,9 +7,6 @@ ENV REFRESHED_AT 2016-09-14
 RUN apt-get update \
     && apt-get upgrade -y
 
-# Fetch leiningen
-ENV LEIN_ROOT true
-
 RUN curl https://raw.githubusercontent.com/technomancy/leiningen/stable/bin/lein -o /usr/local/bin/lein \
 	&& chmod 755 /usr/local/bin/lein
 
@@ -41,4 +38,3 @@ EXPOSE 8085
 
 # Start server
 CMD ["docker/startup.sh"]
-
