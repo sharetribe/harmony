@@ -4,16 +4,18 @@
             [raven-clj.interfaces :as interfaces]
             [harmony.errors :as errors]))
 
-(defrecord SentryReporter [dsn environment]
+(defrecord SentryReporter [dsn environment release]
   errors/IErrorReporter
   (report [_ ex]
     (capture dsn
-             (cond-> {:environment environment}
+             (cond-> {:environment environment
+                      :release release}
                (instance? Throwable ex) (interfaces/stacktrace ex))))
 
   (report-request [_ req ex]
     (capture dsn
-             (cond-> {:environment environment}
+             (cond-> {:environment environment
+                      :release release}
                req (interfaces/http req identity)
                (instance? Throwable ex) (interfaces/stacktrace ex)))))
 

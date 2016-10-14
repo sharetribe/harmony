@@ -20,6 +20,8 @@
  {:dsn #config/prop ["SENTRY_DSN" ""]
   :environment #config/prop ["SENTRY_ENVIRONMENT" "production"]}
 
+ :release #config/prop ["HARMONY_RELEASE" ""]
+
  ;; Note! For leiningen plugin the dev mode config is in project.clj
  :migrations
  {:store :database

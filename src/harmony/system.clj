@@ -27,7 +27,7 @@
                            (swaggered-routes-coll/new-swaggered-routes-coll)
                            {:health-api :health-api
                             :bookings-api :bookings-api})
-   :errors-client (sentry/new-sentry-client (config/sentry-conf config))
+   :errors-client (sentry/new-sentry-client (assoc (config/sentry-conf config) :release (config/release config)))
    :web-server (component/using
                 (service.web-server/new-web-server (config/web-server-conf config))
                 {:routes :swaggered-routes-coll
