@@ -43,7 +43,8 @@
    :connection-pool ConnectionPool
    :migrations Migrations
    :basic-auth BasicAuth
-   :sentry Sentry})
+   :sentry Sentry
+   :release schema/Str})
 
 
 (defn config-harmony-api
@@ -73,3 +74,6 @@
 
 (defn sentry-conf [conf]
   (:sentry conf))
+
+(defn release [conf]
+  (:release conf))

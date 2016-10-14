@@ -30,6 +30,9 @@ RUN lein clean && lein uberjar
 # Copy docker scripts
 COPY docker/ /opt/app/docker/
 
+# Copy release
+COPY RELEASE /opt/app/
+
 # Default JVM options for production
 ENV JAVA_OPTS -server -Xms256m -Xmx768m -Xss512k -XX:+UseG1GC
 
