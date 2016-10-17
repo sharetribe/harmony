@@ -43,7 +43,9 @@
 
   :profiles {:uberjar {:aot :all}
              :dev {:dependencies [[reloaded.repl "0.2.2"]
-                                  [clj-http "2.2.0"]]
+                                  [clj-http "2.2.0"]
+                                  [org.clojure/test.check "0.9.0"]
+                                  [com.gfredericks/test.chuck "0.2.7"]]
                    :source-paths ["dev"]
                    :main user
                    :plugins [[test2junit "1.2.2"]]
