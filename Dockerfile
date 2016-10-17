@@ -34,7 +34,7 @@ COPY docker/ /opt/app/docker/
 COPY RELEASE /opt/app/
 
 # Default JVM options for production
-ENV JAVA_OPTS -server -Xms256m -Xmx768m -Xss512k -XX:+UseG1GC
+ENV HARMONY_JAVA_OPTS -server -Xms256m -Xmx768m -Xss512k -XX:+UseG1GC
 
 # Defaults needed by entrypoint
 EXPOSE 8085
