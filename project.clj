@@ -45,7 +45,8 @@
              :dev {:dependencies [[reloaded.repl "0.2.2"]
                                   [clj-http "2.2.0"]
                                   [org.clojure/test.check "0.9.0"]
-                                  [com.gfredericks/test.chuck "0.2.7"]]
+                                  [com.gfredericks/test.chuck "0.2.7"]
+                                  [org.clojure/core.async "0.2.395"]]
                    :source-paths ["dev"]
                    :main user
                    :plugins [[test2junit "1.2.2"]]

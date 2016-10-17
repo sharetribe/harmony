@@ -5,15 +5,19 @@
             [clojure.test.check.generators :as gen]
             [clojure.test.check.properties :as prop]
             [clojure.test.check.clojure-test :refer [defspec]]
+
+            [clojure.core.async :as async]
             [com.gfredericks.test.chuck :as chuck]
             [com.gfredericks.test.chuck.clojure-test :refer [for-all]]
             [com.stuartsierra.component :as component]
             [clj-time.core :as t]
             [clj-time.coerce :as coerce]
             [clj-time.periodic :refer [periodic-seq]]
+
             [harmony.service.conn-pool :as service.conn-pool]
             [harmony.bookings.service :as service]
             [harmony.config :as config]
+            [harmony.util.log :as log]
             [harmony.integration.db-test-util :as db-test-util]))
 
 (defonce test-system nil)
@@ -82,28 +86,83 @@
          (map date-key)
          (reduce #(update %1 %2 (fnil inc 0)) {}))))
 
+
+(defn return-ex-ex-handler
+  [throwable]
+  (log/error :user
+             :error
+             {:exception throwable})
+  throwable)
+
+;; Generate a set of random bookings for September 2016. Serially
+;; attempt to apply all the generated bookings and validate that no
+;; day has two bookings on it.
 (defspec no-double-bookings-serial
   (chuck/times 5)
-  (for-all [proposed-bookings (gen/no-shrink
-                      (gen/vector
-                       (gen/fmap to-booking-params gen-booking-dates)
-                       3 100))]
+  (for-all [proposed-bookings (gen/no-shrink ; No shrinking because side-effects make it too slow.
+                               (gen/vector
+                                (gen/fmap to-booking-params gen-booking-dates)
+                                3 100))]
            (setup)
            (setup-bookable (:db-conn-pool test-system))
 
-           (let [done (reduce
-                       (fn [r b]
-                         (conj r (create-booking (:db-conn-pool test-system) b)))
-                       []
-                       proposed-bookings)
-                 day-counts (-> done
-                                bookings-by-date
-                                vals)]
-             (is (= day-counts
-                    (repeat (count day-counts) 1))))
+           (let [db     (:db-conn-pool test-system)
+                 done   (reduce
+                         (fn [r b]
+                           (conj r (create-booking db b)))
+                         []
+                         proposed-bookings)
+                 counts (-> done
+                            bookings-by-date
+                            vals)]
+
+             (is (> (count counts) 0)
+                 "At least one booking succeeded")
+             (is (= counts
+                    (repeat (count counts) 1))
+                 "No bookings overlap"))
 
            (teardown)))
 
+;; Generate a set of random bookings for September 2016. Spin up
+;; multiple threads. Divide the generated bookings to thread and have
+;; each of them try to apply the bookings. Validate that no day has
+;; two bookings on it and no exceptions were thrown in the process.
+(defspec no-double-bookings-parallel
+  (chuck/times 5)
+  (for-all [proposed-bookings (gen/no-shrink ; No shrinking because side-effects make it too slow.
+                               (gen/vector
+                                (gen/fmap to-booking-params gen-booking-dates)
+                                3 100))]
+           (setup)
+           (setup-bookable (:db-conn-pool test-system))
+
+           (let [db     (:db-conn-pool test-system)
+                 in     (async/chan 20)
+                 out    (async/chan 20)
+                 _      (async/pipeline-blocking 5
+                                                 out
+                                                 (comp (map #(create-booking db %))
+                                                       (remove nil?))
+                                                 in
+                                                 true
+                                                 return-ex-ex-handler)
+                 _      (async/onto-chan in proposed-bookings)
+                 done   (async/<!! (async/into [] out))
+                 exs    (filter #(instance? java.lang.Throwable %) done)
+                 counts (-> (remove #(instance? java.lang.Throwable %) done)
+                            bookings-by-date
+                            vals)]
+
+             (is (empty? exs)
+                 "No exceptions were thrown.")
+             (is (> (count counts) 0)
+                 "At least one booking succeeded.")
+             (is (= counts
+                    (repeat (count counts) 1))
+                 "No bookings overlap."))
+
+           (teardown)))
 
 (comment
 
