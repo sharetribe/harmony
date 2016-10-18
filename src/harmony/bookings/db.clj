@@ -56,21 +56,26 @@
 
 (defn create-booking
   "Create a new booking iff it doesn't overlap with an existing
-  booking."
+  booking. Run in a transaction with lock on bookable by id to prevent
+  concurrent modifications."
   [db booking]
   (let [{:keys [bookableId start end]} booking
         booking-id (uuid/v1)
-        qp (format-params
-            {:bookableId bookableId
-             :start start
-             :end end
-             :statuses #{:initial :paid :accepted}}
-            {:cols #{:id}})]
+        bookings-qp (format-params
+                     {:bookableId bookableId
+                      :start start
+                      :end end
+                      :statuses #{:initial :paid :accepted}}
+                     {:cols #{:id}})]
     (jdbc/with-db-transaction [tx db {:isolation :repeatable-read}]
-      (let [free? (-> (select-for-update-bookings-by-bookable-start-end-status
-                       tx qp)
-                      empty?)]
-        (if free?
+      (let [bookable-exists? (select-for-update-bookable-by-id
+                              tx
+                              (format-params {:id bookableId} {:cols #{:id}}))
+            slot-free? (-> (select-bookings-by-bookable-start-end-status
+                            tx
+                            bookings-qp)
+                           empty?)]
+        (if (and bookable-exists? slot-free?)
           (do (insert-booking tx (format-insert-data
                                   (assoc booking :id booking-id)))
               booking-id)

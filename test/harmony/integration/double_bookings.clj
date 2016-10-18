@@ -24,7 +24,8 @@
 
 (defn- new-test-system [config]
   (component/system-map
-   :db-conn-pool (service.conn-pool/new-connection-pool (config/db-conn-pool-conf config))))
+   :db-conn-pool (service.conn-pool/new-connection-pool
+                  (config/db-conn-pool-conf config))))
 
 (defn- teardown []
   (when-not (nil? test-system)
@@ -39,6 +40,7 @@
      (constantly (new-test-system conf))))
 
   (alter-var-root #'test-system component/start))
+
 
 (def fixed-uuid
   (let [ids-holder (atom {})]
