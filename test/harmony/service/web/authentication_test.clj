@@ -18,10 +18,8 @@
       :enter))
 
 (def fixed-token-data
-  {:marketplaceId (java.util.UUID/randomUUID)
-   :actorId (java.util.UUID/randomUUID)
-   :role :user
-   :exp (time/plus (time/now) (time/minutes 60))})
+  {:data {:marketplaceId (java.util.UUID/randomUUID)
+          :actorId (java.util.UUID/randomUUID)}})
 
 (deftest disabled-auth-no-token
   (let [conf {:disable-authentication true
@@ -32,8 +30,7 @@
            (assoc context
                   ::auth/auth-data
                   {:marketplaceId uuid/null
-                   :actorId uuid/null
-                   :role :superAdmin})))))
+                   :actorId uuid/null})))))
 
 (deftest token-missing
   (let [conf {:disable-authentication false
@@ -76,7 +73,7 @@
     (is (= (validate context)
            (assoc context
                   ::auth/auth-data
-                  (dissoc fixed-token-data :exp))))))
+                  (:data fixed-token-data))))))
 
 (deftest multiple-secrets
   (let [conf {:disable-authentication false
@@ -86,4 +83,4 @@
     (is (= (validate context)
            (assoc context
                   ::auth/auth-data
-                  (dissoc fixed-token-data :exp))))))
+                  (:data fixed-token-data))))))

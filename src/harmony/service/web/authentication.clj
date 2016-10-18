@@ -13,16 +13,13 @@
 
 (s/defschema TokenData
   {:marketplaceId s/Uuid
-   :actorId s/Uuid
-   :role (s/enum :user :admin :superAdmin)
-   :exp s/Int})
+   :actorId s/Uuid})
 
 (def dummy-auth-data
   "Dummy auth data that is added to the context map when
    authentication is turned off, i.e. in development."
   {:marketplaceId uuid/null
-   :actorId uuid/null
-   :role :superAdmin})
+   :actorId uuid/null})
 
 (def parse-token
   (coerce/coercer! TokenData coerce/json-coercion-matcher))
@@ -40,6 +37,7 @@
                 (try
                   (-> jwt-token
                       (jwt/unsign key)
+                      :data
                       (parse-token))
                   (catch Exception e
                     (condp = (-> e ex-data :type)
