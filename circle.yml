@@ -10,6 +10,6 @@ machine:
 
 test:
   override:
-    - lein trampoline test2junit
+    - TEST_CHECK_FACTOR=4 lein trampoline test2junit
   post:
     - cp -R test-results $CIRCLE_TEST_REPORTS
