@@ -116,11 +116,3 @@
       (db/modify-booking-status db {:id booking-id :status :rejected})
       (db/fetch-booking db {:id booking-id}))))
 
-(comment
-  (def db (store/new-mem-booking-store))
-  (create-bookable db {:marketplaceId 1234 :refId 4444 :authorId 27272})
-
-  (t/day (t/date-midnight 2016 8 31))
-  (free-dates #inst "2016-09-09T10:02:01"
-              #inst "2016-09-15")
-  )

@@ -10,6 +10,12 @@ values (:id, :marketplaceId, :refId, :authorId, :unitType, :activePlanId);
 select :i*:cols from bookables
 where marketplace_id = :marketplaceId AND ref_id = :refId;
 
+-- :name select-for-update-bookable-by-id :? :1
+-- :doc Select a bookable by primary key and get an "for update" lock to it.
+select :i*:cols from bookables
+where id = :id
+for update;
+
 -- :name insert-plan :! :n
 -- :doc Insert a new plan
 insert into plans (id, marketplace_id, bookable_id, seats, plan_mode)
@@ -50,16 +56,3 @@ AND (
   (start <= :start AND end >= :end)
 );
 
--- :name select-for-update-bookings-by-bookable-start-end-status :? :*
--- :doc Get bookables by bookableId that overlaps with [start, end]
-select :i*:cols from bookings
-where bookable_id = :bookableId
-AND status in (:v*:statuses)
-AND (
-  (end > :start AND end <= :end)
-  OR
-  (start >= :start AND start < :end)
-  OR
-  (start <= :start AND end >= :end)
-)
-for update;

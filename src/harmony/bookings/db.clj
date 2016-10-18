@@ -56,21 +56,26 @@
 
 (defn create-booking
   "Create a new booking iff it doesn't overlap with an existing
-  booking."
+  booking. Run in a transaction with lock on bookable by id to prevent
+  concurrent modifications."
   [db booking]
   (let [{:keys [bookableId start end]} booking
         booking-id (uuid/v1)
-        qp (format-params
-            {:bookableId bookableId
-             :start start
-             :end end
-             :statuses #{:initial :paid :accepted}}
-            {:cols #{:id}})]
+        bookings-qp (format-params
+                     {:bookableId bookableId
+                      :start start
+                      :end end
+                      :statuses #{:initial :paid :accepted}}
+                     {:cols #{:id}})]
     (jdbc/with-db-transaction [tx db {:isolation :repeatable-read}]
-      (let [free? (-> (select-for-update-bookings-by-bookable-start-end-status
-                       tx qp)
-                      empty?)]
-        (if free?
+      (let [bookable-exists? (select-for-update-bookable-by-id
+                              tx
+                              (format-params {:id bookableId} {:cols #{:id}}))
+            slot-free? (-> (select-bookings-by-bookable-start-end-status
+                            tx
+                            bookings-qp)
+                           empty?)]
+        (if (and bookable-exists? slot-free?)
           (do (insert-booking tx (format-insert-data
                                   (assoc booking :id booking-id)))
               booking-id)
@@ -110,42 +115,3 @@
   [db booking]
   (update-booking-status db (format-insert-data booking)))
 
-(comment
-  (def m-id (uuid/v1))
-  (def ref-id (uuid/v1))
-  (def b {:marketplaceId m-id
-          :refId ref-id
-          :authorId (uuid/v1)
-          :unitType :day})
-  (def p {:marketplaceId m-id
-          :seats 1
-          :planMode :available})
-
-  (let [db (:db-conn-pool reloaded.repl/system)]
-    (create-bookable db b p))
-
-  (def b-ret (let [db (:db-conn-pool reloaded.repl/system)]
-               (fetch-bookable-with-plan db {:marketplaceId m-id :refId ref-id}))
-    )
-
-  (let [db (:db-conn-pool reloaded.repl/system)]
-    (fetch-bookable db {:marketplaceId m-id :refId ref-id} {:cols :id}))
-
-  b-ret
-
-  bookable-by-ref
-
-
-  (let [db (:db-conn-pool reloaded.repl/system)
-        qp (format-params
-            {:bookableId #uuid "f3385740-85a6-11e6-9df2-91438e52b283"
-             :start #inst "2016-10-07"
-             :end #inst "2016-10-08"
-             :statuses #{:initial :paid :accepted}
-             }
-            {:cols #{:id}})]
-    #_(select-bookings-by-bookable-start-end db qp)
-    #_(select-for-update-bookings-by-bookable-start-end-status-sqlvec qp)
-    (select-for-update-bookings-by-bookable-start-end-status db qp)
-    )
-  )
