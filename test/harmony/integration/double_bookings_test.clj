@@ -1,10 +1,8 @@
-(ns harmony.integration.double-bookings
+(ns harmony.integration.double-bookings-test
   "Test the bookings logic from service layer level to DB (skip the
   API)."
   (:require [clojure.test :refer :all]
             [clojure.test.check.generators :as gen]
-            [clojure.test.check.properties :as prop]
-            [clojure.test.check.clojure-test :refer [defspec]]
 
             [clojure.core.async :as async]
             [com.gfredericks.test.chuck :as chuck]
