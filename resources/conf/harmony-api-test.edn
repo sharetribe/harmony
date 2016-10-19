@@ -29,4 +29,8 @@
                               #config/prop ["DB_NAME" "harmony_test_db"]
                               "?createDatabaseIfNotExist=true"]
        :user #config/prop ["DB_USER" "root"]
-       :password #config/prop ["DB_PASSWORD" "harmony-root"]}}}
+       :password #config/prop ["DB_PASSWORD" "harmony-root"]}}
+
+ :api-authentication
+ {:disable-authentication #config/prop ["DISABLE_API_AUTHENTICATION" "true"]
+  :token-secrets #config/prop ["AUTH_TOKEN_SECRETS" "secret_key1,secret_key2"]}}

@@ -14,6 +14,9 @@
                  [clj-time "0.12.0"]
                  [danlentz/clj-uuid "0.1.6"]
 
+                 ;; Authentication
+                 [buddy/buddy-sign "1.2.0"]
+
                  ;; Database handling
                  [mysql/mysql-connector-java "5.1.39"]
                  [org.clojure/java.jdbc "0.6.1"]

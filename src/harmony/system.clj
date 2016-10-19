@@ -21,7 +21,7 @@
                   {:db :db-conn-pool
                    :basic-auth-backend :basic-auth-backend})
    :bookings-api (component/using
-                  (bookings.api/new-bookings-api {})
+                  (bookings.api/new-bookings-api (config/api-authentication-conf config))
                   {:db :db-conn-pool})
    :swaggered-routes-coll (component/using
                            (swaggered-routes-coll/new-swaggered-routes-coll)

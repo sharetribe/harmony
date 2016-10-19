@@ -34,4 +34,8 @@
                               "/"
                               #config/prop ["DB_NAME" "harmony_db"]]
        :user #config/prop ["DB_USER" "root"]
-       :password #config/prop ["DB_PASSWORD" "harmony-root"]}}}
+       :password #config/prop ["DB_PASSWORD" "harmony-root"]}}
+
+ :api-authentication
+ {:disable-authentication #config/prop ["DISABLE_API_AUTHENTICATION" "false"]
+  :token-secrets #config/prop ["AUTH_TOKEN_SECRETS" "secret_key1,secret_key2"]}}

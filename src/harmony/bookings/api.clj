@@ -13,6 +13,7 @@
             [harmony.service.web.content-negotiation :as content-negotiation]
             [harmony.service.web.swagger :refer [coerce-request]]
             [harmony.service.web.resource :as resource]
+            [harmony.service.web.authentication :as authentication]
             [harmony.service.web-server :refer [IRoutes]]))
 
 (s/defschema CreateBookableCmd
@@ -62,7 +63,6 @@
               b))
             (-> (response/response "Bookable for given marketplaceId and refId already exists.")
                 (response/status http-status/conflict)))))))))
-
 
 (defn show-bookable [deps]
   (let [{:keys [db]} deps]
@@ -191,8 +191,9 @@
                  "No bookable found for given marketplaceId and refId.")
                 (response/status http-status/not-found)))))))))
 
-(def api-interceptors
-  [content-negotiation/negotiate-response
+(defn api-interceptors [config]
+  [(authentication/validate-token config)
+   content-negotiation/negotiate-response
    api/error-responses
    (api/body-params)
    api/common-body
@@ -200,14 +201,15 @@
    (api/validate-response)])
 
 (defn- make-routes [config deps]
-  (route/expand-routes
-   #{["/bookables/create" :post (conj api-interceptors (create-bookable deps))]
-     ;; ["/bookables/updateAvailability" :post update-availability]
-     ["/bookables/show" :get (conj api-interceptors (show-bookable deps))]
-     ["/timeslots/query" :get (conj api-interceptors (query-time-slots deps))]
-     ["/bookings/initiate" :post (conj api-interceptors (initiate-booking deps))]
-     ["/bookings/accept" :post (conj api-interceptors (accept-booking deps))]
-     ["/bookings/reject" :post (conj api-interceptors (reject-booking deps))]}))
+  (let [interceptors (api-interceptors config)]
+    (route/expand-routes
+     #{["/bookables/create" :post (conj interceptors (create-bookable deps))]
+       ;; ["/bookables/updateAvailability" :post update-availability]
+       ["/bookables/show" :get (conj interceptors (show-bookable deps))]
+       ["/timeslots/query" :get (conj interceptors (query-time-slots deps))]
+       ["/bookings/initiate" :post (conj interceptors (initiate-booking deps))]
+       ["/bookings/accept" :post (conj interceptors (accept-booking deps))]
+       ["/bookings/reject" :post (conj interceptors (reject-booking deps))]})))
 
 (defrecord BookingsAPI [config db]
   IRoutes
