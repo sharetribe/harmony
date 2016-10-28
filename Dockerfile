@@ -1,7 +1,7 @@
 FROM java:8u102
 
 MAINTAINER  Sharetribe Ltd. "http://github.com/sharetribe"
-ENV REFRESHED_AT 2016-09-14
+ENV REFRESHED_AT 2016-10-28
 
 # Update the package repository
 RUN apt-get update \
