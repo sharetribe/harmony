@@ -6,8 +6,8 @@
 
   :dependencies [[org.clojure/clojure "1.8.0"]
                  [com.stuartsierra/component "0.3.1"]
-                 [io.pedestal/pedestal.service "0.5.0"]
-                 [io.pedestal/pedestal.jetty "0.5.0"]
+                 [io.pedestal/pedestal.service "0.5.1"]
+                 [io.pedestal/pedestal.jetty "0.5.1"]
                  [prismatic/schema "1.1.3"]
                  [io.aviso/config "0.1.13"]
                  [pedestal-api "0.3.0"]
