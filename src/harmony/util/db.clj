@@ -60,12 +60,13 @@
   camelCased keywords) whose value should be converted to keyword."
   ([db-response] (format-result db-response nil))
   ([db-response {:keys [as-keywords]}]
-   (let [r (-> db-response
-               (map-values bytes-to-uuid)
-               (map-keys camel-case-key))]
-     (if (seq as-keywords)
-       (map-kvs r keywordize as-keywords)
-       r))))
+   (when (seq db-response)
+     (let [r (-> db-response
+                 (map-values bytes-to-uuid)
+                 (map-keys camel-case-key))]
+       (if (seq as-keywords)
+         (map-kvs r keywordize as-keywords)
+         r)))))
 
 (defn format-insert-data
   "Format an object for insertion to DB by converting all UUID values

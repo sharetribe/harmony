@@ -49,10 +49,9 @@
   :active-plan."
   [db {:keys [marketplaceId refId]}]
   (jdbc/with-db-transaction [tx db {:read-only? true}]
-    (if-let [b (fetch-bookable tx {:marketplaceId marketplaceId :refId refId})]
+    (when-let [b (fetch-bookable tx {:marketplaceId marketplaceId :refId refId})]
       {:bookable (dissoc b :activePlanId)
-       :active-plan (fetch-plan tx {:id (:activePlanId b)})}
-      {:bookable nil :active-plan nil})))
+       :active-plan (fetch-plan tx {:id (:activePlanId b)})})))
 
 (defn create-booking
   "Create a new booking iff it doesn't overlap with an existing
