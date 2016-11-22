@@ -76,6 +76,18 @@
                 vec)
            x)))))
 
+(defn- keyword-seq-matcher [schema]
+  (when (= [s/Keyword] schema)
+    (coerce/safe
+     (fn [x]
+       (if (string? x)
+         (->> (str/split x #",")
+              (map str/trim)
+              (remove empty?)
+              (map keyword)
+              vec)
+         x)))))
+
 (def api-date-time-formatter (format/formatters :date-time))
 
 (defn- date-matcher [schema]
@@ -92,6 +104,7 @@
 (def default-coercions
   (coerce/first-matcher [date-matcher
                          uuid-seq-matcher
+                         keyword-seq-matcher
                          coerce/string-coercion-matcher
                          num-seq-matcher]))
 

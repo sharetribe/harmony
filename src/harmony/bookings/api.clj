@@ -7,6 +7,8 @@
             [pedestal-api.core :as api]
             [ring.util.response :as response]
             [ring.util.http-status :as http-status]
+            [clj-time.core :as t]
+            [clj-time.coerce :as coerce]
 
             [harmony.bookings.types :as types]
             [harmony.bookings.service :as bookings]
@@ -14,7 +16,8 @@
             [harmony.service.web.swagger :refer [coerce-request]]
             [harmony.service.web.resource :as resource]
             [harmony.service.web.authentication :as authentication]
-            [harmony.service.web-server :refer [IRoutes]]))
+            [harmony.service.web-server :refer [IRoutes]]
+            [harmony.util.time :refer [midnight-date]]))
 
 (s/defschema CreateBookableCmd
   "Create a new bookable for a referenced object (listing, etc.)"
@@ -32,13 +35,6 @@
   {:actorId s/Uuid
    :reason s/Keyword})
 
-(defonce myreq (atom nil))
-
-(comment
-  (:body-params @myreq)
-  ((:url-for @myreq) ::show-bookable :params {:marketplaceId 123 :refId 321})
-  )
-
 (defn create-bookable [deps]
   (let [{:keys [db]} deps]
     (api/annotate
@@ -51,7 +47,6 @@
      (interceptor/handler
       ::create-bookable
       (fn [req]
-        (reset! myreq req)
         (let [create-cmd (get req :body-params)
               url-for (get req :url-for)
               b (bookings/create-bookable db create-cmd)]
@@ -64,20 +59,38 @@
             (-> (response/response "Bookable for given marketplaceId and refId already exists.")
                 (response/status http-status/conflict)))))))))
 
+(defn- show-bookable-params [req]
+  (let [{:keys [marketplaceId refId] :as params} (get req :query-params)
+        include (->> (:include params) (filter #{:bookings :blocks}) set)
+        start (or (:start params) (midnight-date (java.util.Date.)))
+        end (or (:end params) (-> start
+                                  coerce/from-date
+                                  (t/plus (t/months 1))
+                                  coerce/to-date))]
+    {:marketplaceId marketplaceId
+     :refId refId
+     :include include
+     :start (midnight-date start)
+     :end (midnight-date end)}))
+
+
 (defn show-bookable [deps]
   (let [{:keys [db]} deps]
     (api/annotate
      {:summary "Retrieve a bookable"
       :parameters {:query-params {:marketplaceId s/Uuid
-                                  :refId s/Uuid}}
+                                  :refId s/Uuid
+                                  (s/optional-key :include) [s/Keyword]
+                                  (s/optional-key :start) s/Inst
+                                  (s/optional-key :end) s/Inst}}
       :responses {http-status/ok {:body (resource/show-response-schema types/Bookable)}
                   http-status/not-found {:body s/Str}}
       :operationId :show-bookable}
      (interceptor/handler
       ::show-bookable
       (fn [req]
-        (let [{:keys [marketplaceId refId]} (get req :query-params)
-              b (bookings/fetch-bookable db marketplaceId refId)]
+        (let [params (show-bookable-params req)
+              b (bookings/fetch-bookable db params)]
           (if b
             (response/response (resource/show-response types/Bookable b))
             (-> (response/response "No bookable found for given marketplaceId and refId.")
