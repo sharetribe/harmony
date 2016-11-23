@@ -11,48 +11,6 @@
 ;; Public query methods
 ;;
 
-(defn create-bookable
-  [db bookable initial-plan]
-  (let [bookable-id (uuid/v1)
-        plan-id (uuid/v1)
-        p (merge initial-plan {:id plan-id :bookableId bookable-id})
-        b (merge bookable {:id bookable-id :activePlanId plan-id})]
-    (jdbc/with-db-transaction [tx db]
-      (insert-bookable tx (format-insert-data b))
-      (insert-plan tx (format-insert-data p)))
-    [bookable-id plan-id]))
-
-(defn fetch-bookable
-  "Fetch a bookable by marketplaceId and refId."
-  ([db query-params] (fetch-bookable db query-params {}))
-  ([db {:keys [marketplaceId refId]} {:keys [cols]}]
-   (let [qp (format-params
-             {:marketplaceId marketplaceId :refId refId}
-             {:cols cols :default-cols #{:id :marketplaceId :refId :authorId :unitType :activePlanId}})]
-     (format-result (select-bookable-by-ref db qp)
-                    {:as-keywords #{:unitType}}))))
-
-(defn fetch-plan
-  "Fetch a plan by given primary id (uuid)."
-  ([db query-params] (fetch-plan db query-params {}))
-  ([db {:keys [id]} {:keys [cols]}]
-   (let [qp (format-params
-             {:id id}
-             {:cols cols :default-cols [:id :marketplaceId :seats :planMode]})]
-     (format-result
-      (select-plan-by-id db qp)
-      {:as-keywords #{:planMode}}))))
-
-(defn fetch-bookable-with-plan
-  "Fetch the bookable by marketplace id and reference id + the
-  associated active plan. Return as a map with keys :bookable and
-  :active-plan."
-  [db {:keys [marketplaceId refId]}]
-  (jdbc/with-db-transaction [tx db {:read-only? true}]
-    (when-let [b (fetch-bookable tx {:marketplaceId marketplaceId :refId refId})]
-      {:bookable (dissoc b :activePlanId)
-       :active-plan (fetch-plan tx {:id (:activePlanId b)})})))
-
 (defn create-booking
   "Create a new booking iff it doesn't overlap with an existing
   booking. Run in a transaction with lock on bookable by id to prevent
@@ -113,4 +71,57 @@
   "Update booking status"
   [db booking]
   (update-booking-status db (format-insert-data booking)))
+
+
+(defn create-bookable
+  [db bookable initial-plan]
+  (let [bookable-id (uuid/v1)
+        plan-id (uuid/v1)
+        p (merge initial-plan {:id plan-id :bookableId bookable-id})
+        b (merge bookable {:id bookable-id :activePlanId plan-id})]
+    (jdbc/with-db-transaction [tx db]
+      (insert-bookable tx (format-insert-data b))
+      (insert-plan tx (format-insert-data p)))
+    [bookable-id plan-id]))
+
+(defn fetch-bookable
+  "Fetch a bookable by marketplaceId and refId."
+  ([db query-params] (fetch-bookable db query-params {}))
+  ([db {:keys [marketplaceId refId]} {:keys [cols]}]
+   (let [qp (format-params
+             {:marketplaceId marketplaceId :refId refId}
+             {:cols cols :default-cols #{:id :marketplaceId :refId :authorId :unitType :activePlanId}})]
+     (format-result (select-bookable-by-ref db qp)
+                    {:as-keywords #{:unitType}}))))
+
+(defn fetch-plan
+  "Fetch a plan by given primary id (uuid)."
+  ([db query-params] (fetch-plan db query-params {}))
+  ([db {:keys [id]} {:keys [cols]}]
+   (let [qp (format-params
+             {:id id}
+             {:cols cols :default-cols [:id :marketplaceId :seats :planMode]})]
+     (format-result
+      (select-plan-by-id db qp)
+      {:as-keywords #{:planMode}}))))
+
+(defn fetch-bookable-with-plan
+  "Fetch the bookable by marketplace id and reference id + the
+  associated active plan. Optionally include bookings and blocks from
+  given time range. Return as a flat map with keys
+  :bookable,:active-plan, :bookings and :blocks."
+  [db {:keys [marketplaceId refId include start end]}]
+  (jdbc/with-db-transaction [tx db {:read-only? true}]
+    (when-let [b (fetch-bookable
+                  tx
+                  {:marketplaceId marketplaceId :refId refId})]
+      (let [bookable (dissoc b :activePlanId)
+            active-plan (fetch-plan tx {:id (:activePlanId b)})
+            bookings (when (:bookings include)
+                       (fetch-bookings
+                        tx
+                        {:bookableId (:id b) :start start :end end}))]
+        {:bookable (dissoc b :activePlanId)
+         :active-plan (fetch-plan tx {:id (:activePlanId b)})
+         :bookings bookings}))))
 

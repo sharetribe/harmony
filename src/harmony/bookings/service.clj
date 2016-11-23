@@ -32,12 +32,13 @@
         (assoc bookable :activePlan active-plan)))))
 
 (defn fetch-bookable
-  [db m-id ref-id]
-  (when-let [{:keys [bookable active-plan]}
+  [db params]
+  (when-let [{:keys [bookable active-plan bookings]}
              (db/fetch-bookable-with-plan
               db
-              {:marketplaceId m-id :refId ref-id})]
-    (assoc bookable :activePlan active-plan)))
+              params)]
+    (cond-> (assoc bookable :activePlan active-plan)
+      bookings (assoc :bookings bookings))))
 
 (defn- free-dates [start end bookings]
   (let [booking-is (map #(t/interval (time/midnight-date-time (:start %))

@@ -259,3 +259,31 @@
     (is (= (count free-timeslots) (count (:data body))))
     (is (= expected actual))))
 
+
+(deftest show-bookable
+  (let [_ (do-post "/bookables/create"
+                   {}
+                   {:marketplaceId (fixed-uuid :marketplaceId)
+                    :refId (fixed-uuid :refId)
+                    :authorId (fixed-uuid :authorId)})
+        _ (doseq [[start end] [[#inst "2016-09-19T00:00:00.000Z" #inst "2016-09-20T00:00:00.000Z"]
+                               [#inst "2016-09-22T00:00:00.000Z" #inst "2016-09-24T00:00:00.000Z"]
+                               [#inst "2016-08-22T00:00:00.000Z" #inst "2016-08-24T00:00:00.000Z"]]]
+            (do-post "/bookings/initiate"
+                     {}
+                     {:marketplaceId (fixed-uuid :marketplaceId)
+                      :customerId (fixed-uuid :customerId)
+                      :refId (fixed-uuid :refId)
+                      :initialStatus :paid
+                      :start start
+                      :end end}))
+        {:keys [status body] :as res} (do-get "/bookables/show"
+                                              {:marketplaceId (fixed-uuid :marketplaceId)
+                                               :refId (fixed-uuid :refId)
+                                               :include "bookings"
+                                               :start "2016-09-01T00:00:00.000Z"
+                                               :end "2016-09-30T00:00:00.000Z"})]
+
+
+    (is (= 200 status))
+    (is (= 2 (-> body :data :relationships :bookings count)))))
