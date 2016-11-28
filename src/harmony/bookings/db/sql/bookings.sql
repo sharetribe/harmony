@@ -56,3 +56,20 @@ AND (
   (start <= :start AND end >= :end)
 );
 
+-- :name insert-exception :! :n
+-- :Doc Insert a new exception
+insert into exceptions (id, type, marketplace_id, bookable_id, seatsOverride, start, end)
+values (:id, :type, :marketplaceId, :bookableId, :seatsOverride, :start, :end);
+
+-- :name select-exceptions-by-bookable-start-end-type :? :*
+-- :doc Get exceptions by bookableId, start, end, and type
+select :i*:cols from exceptions
+where bookable_id = :bookableId
+AND type = :type
+AND (
+  (end > :start AND end <= :end)
+  OR
+  (start >= :start AND start < :end)
+  OR
+  (start <= :start AND end >= :end)
+);

@@ -38,8 +38,8 @@
   ;; for that.
   ;;
   ;; Implement updateAvailability and remove me
-  (bookings-db/create-block nil block)
-  )
+  (let [db (:db-conn-pool test-system)]
+    (bookings-db/create-block db block)))
 
 (use-fixtures :each (fn [f]
                       (setup)
@@ -296,9 +296,7 @@
                       :end end}))
         _ (doseq [[start end] [[#inst "2016-09-17T00:00:00.000Z" #inst "2016-09-18T00:00:00.000Z"]
                                [#inst "2016-09-21T00:00:00.000Z" #inst "2016-09-22T00:00:00.000Z"]
-                               ;; TODO Add this when DB part is implemented
-                               ;; [#inst "2016-08-22T00:00:00.000Z" #inst "2016-08-24T00:00:00.000Z"]
-                               ]]
+                               [#inst "2016-08-22T00:00:00.000Z" #inst "2016-08-24T00:00:00.000Z"]]]
             (create-block {:marketplaceId (fixed-uuid :marketplaceId)
                            :bookableId bookable-id
                            :start start

@@ -105,36 +105,27 @@
       (select-plan-by-id db qp)
       {:as-keywords #{:planMode}}))))
 
-;; TODO This is a temporary store
-(defonce exceptions (atom ()))
-
-(defn insert-block [tx b] (swap! exceptions conj b))
-
-(defn select-blocks-by-bookable-start-end [db {:keys [bookableId start end]}]
-  (filter #(=
-            (harmony.util.db/bytes-to-uuid bookableId)
-            (harmony.util.db/bytes-to-uuid (:bookableId %)))
-          @exceptions))
-
 (defn fetch-blocks
   ([db query-params] (fetch-blocks db query-params {}))
   ([db {:keys [bookableId start end]} {:keys [cols]}]
    (let [qp (format-params
-             {:bookableId bookableId :start start :end end}
+             {:bookableId bookableId :start start :end end :type :block}
              {:cols cols :default-cols #{:id
-                                         :marketoplaceId
+                                         :marketplaceId
                                          :bookableId
                                          :start
                                          :end}})
-         blocks (select-blocks-by-bookable-start-end db qp)]
-     (map format-result blocks))))
+         blocks (select-exceptions-by-bookable-start-end-type db qp)]
+     (map #(format-result % {:as-keywords #{:type}}) blocks))))
 
 (defn create-block
   "Create a new block"
   ([db block]
-  (let [block-id (uuid/v1)
-        b (merge block {:id block-id})]
-    (insert-block nil (format-insert-data b)))))
+   (let [block-id (uuid/v1)]
+     (do
+       (insert-exception db (format-insert-data
+                         (assoc block :id block-id :type :block, :seatsOverride nil)))
+       block-id))))
 
 (defn fetch-bookable-with-plan
   "Fetch the bookable by marketplace id and reference id + the
