@@ -105,6 +105,37 @@
       (select-plan-by-id db qp)
       {:as-keywords #{:planMode}}))))
 
+;; TODO This is a temporary store
+(defonce exceptions (atom ()))
+
+(defn insert-block [tx b] (swap! exceptions conj b))
+
+(defn select-blocks-by-bookable-start-end [db {:keys [bookableId start end]}]
+  (filter #(=
+            (harmony.util.db/bytes-to-uuid bookableId)
+            (harmony.util.db/bytes-to-uuid (:bookableId %)))
+          @exceptions))
+
+(defn fetch-blocks
+  ([db query-params] (fetch-blocks db query-params {}))
+  ([db {:keys [bookableId start end]} {:keys [cols]}]
+   (let [qp (format-params
+             {:bookableId bookableId :start start :end end}
+             {:cols cols :default-cols #{:id
+                                         :marketoplaceId
+                                         :bookableId
+                                         :start
+                                         :end}})
+         blocks (select-blocks-by-bookable-start-end db qp)]
+     (map format-result blocks))))
+
+(defn create-block
+  "Create a new block"
+  ([db block]
+  (let [block-id (uuid/v1)
+        b (merge block {:id block-id})]
+    (insert-block nil (format-insert-data b)))))
+
 (defn fetch-bookable-with-plan
   "Fetch the bookable by marketplace id and reference id + the
   associated active plan. Optionally include bookings and blocks from
@@ -120,8 +151,12 @@
             bookings (when (:bookings include)
                        (fetch-bookings
                         tx
-                        {:bookableId (:id b) :start start :end end}))]
+                        {:bookableId (:id b) :start start :end end}))
+            blocks (when (:blocks include)
+                     (fetch-blocks
+                      tx
+                      {:bookableId (:id b) :start start :end end}))]
         {:bookable (dissoc b :activePlanId)
          :active-plan (fetch-plan tx {:id (:activePlanId b)})
-         :bookings bookings}))))
-
+         :bookings bookings
+         :blocks blocks}))))

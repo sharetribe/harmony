@@ -33,11 +33,12 @@
 
 (defn fetch-bookable
   [db params]
-  (when-let [{:keys [bookable active-plan bookings]}
+  (when-let [{:keys [bookable active-plan bookings blocks]}
              (db/fetch-bookable-with-plan
               db
               params)]
     (cond-> (assoc bookable :activePlan active-plan)
+      blocks (assoc :blocks blocks)
       bookings (assoc :bookings bookings))))
 
 (defn- free-dates [start end bookings]

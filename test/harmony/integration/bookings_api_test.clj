@@ -6,7 +6,8 @@
             [clj-time.coerce :as c]
             [harmony.integration.db-test-util :as db-test-util]
             [harmony.config :as config]
-            [harmony.system :as system]))
+            [harmony.system :as system]
+            [harmony.bookings.db :as bookings-db]))
 
 (def fixed-uuid
   (let [ids-holder (atom {})]
@@ -30,6 +31,15 @@
      (constantly (system/harmony-api conf))))
 
   (alter-var-root #'test-system component/start))
+
+(defn- create-block [block]
+  ;; TODO Remove me!
+  ;; I'm just a helper method to add blocks while we don't have endpoint
+  ;; for that.
+  ;;
+  ;; Implement updateAvailability and remove me
+  (bookings-db/create-block nil block)
+  )
 
 (use-fixtures :each (fn [f]
                       (setup)
@@ -261,11 +271,12 @@
 
 
 (deftest show-bookable
-  (let [_ (do-post "/bookables/create"
-                   {}
-                   {:marketplaceId (fixed-uuid :marketplaceId)
-                    :refId (fixed-uuid :refId)
-                    :authorId (fixed-uuid :authorId)})
+  (let [bookable-res (do-post "/bookables/create"
+                              {}
+                              {:marketplaceId (fixed-uuid :marketplaceId)
+                               :refId (fixed-uuid :refId)
+                               :authorId (fixed-uuid :authorId)})
+        bookable-id (get-in bookable-res [:body :data :id])
         _ (doseq [[start end] [[#inst "2016-09-19T00:00:00.000Z" #inst "2016-09-20T00:00:00.000Z"]
                                [#inst "2016-09-22T00:00:00.000Z" #inst "2016-09-24T00:00:00.000Z"]
                                [#inst "2016-08-22T00:00:00.000Z" #inst "2016-08-24T00:00:00.000Z"]]]
@@ -277,13 +288,22 @@
                       :initialStatus :paid
                       :start start
                       :end end}))
+        _ (doseq [[start end] [[#inst "2016-09-17T00:00:00.000Z" #inst "2016-09-18T00:00:00.000Z"]
+                               [#inst "2016-09-21T00:00:00.000Z" #inst "2016-09-22T00:00:00.000Z"]
+                               ;; TODO Add this when DB part is implemented
+                               ;; [#inst "2016-08-22T00:00:00.000Z" #inst "2016-08-24T00:00:00.000Z"]
+                               ]]
+            (create-block {:marketplaceId (fixed-uuid :marketplaceId)
+                           :bookableId bookable-id
+                           :start start
+                           :end end}))
         {:keys [status body] :as res} (do-get "/bookables/show"
                                               {:marketplaceId (fixed-uuid :marketplaceId)
                                                :refId (fixed-uuid :refId)
-                                               :include "bookings"
+                                               :include "bookings,blocks"
                                                :start "2016-09-01T00:00:00.000Z"
                                                :end "2016-09-30T00:00:00.000Z"})]
 
-
     (is (= 200 status))
+    (is (= 2 (-> body :data :relationships :blocks count)))
     (is (= 2 (-> body :data :relationships :bookings count)))))

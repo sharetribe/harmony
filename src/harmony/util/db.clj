@@ -20,7 +20,7 @@
   (let [[f & r] (re-seq #"^[1-9a-z]+|[A-Z][1-9a-z]*" (name k))]
     (apply str (interpose "_" (cons f (map str/lower-case r))))))
 
-(defn- bytes-to-uuid
+(defn bytes-to-uuid
   "If v is a byte array representing UUID convert it to
   UUID. Otherwise return as is."
   [v]
@@ -29,7 +29,7 @@
     (sorted-bytes->uuid v)
     v))
 
-(defn- uuid-to-bytes
+(defn uuid-to-bytes
   "If v is a UUID convert to byte array. Otherwise return as is."
   [v]
   (if (instance? java.util.UUID v)
