@@ -58,7 +58,7 @@ AND (
 
 -- :name insert-exception :! :n
 -- :Doc Insert a new exception
-insert into exceptions (id, type, marketplace_id, bookable_id, seatsOverride, start, end)
+insert into exceptions (id, type, marketplace_id, bookable_id, seats_override, start, end)
 values (:id, :type, :marketplaceId, :bookableId, :seatsOverride, :start, :end);
 
 -- :name select-exceptions-by-bookable-start-end-type :? :*

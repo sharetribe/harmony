@@ -3,7 +3,7 @@ CREATE TABLE IF NOT EXISTS `exceptions`(
   `marketplace_id` binary(16) NOT NULL,
   `type` varchar(32) NOT NULL,
   `bookable_id` binary(16) NOT NULL,
-  `seatsOverride` int(11),
+  `seats_override` int(11),
   `start` datetime NOT NULL,
   `end` datetime NOT NULL,
   `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
