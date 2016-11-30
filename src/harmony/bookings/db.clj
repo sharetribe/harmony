@@ -2,7 +2,10 @@
   (:require [hugsql.core :as hugsql]
             [clj-uuid :as uuid]
             [clojure.java.jdbc :as jdbc]
-            [harmony.util.db :refer [format-result format-insert-data format-params]]))
+            [harmony.util.db :refer [format-result
+                                     format-insert-data
+                                     format-params
+                                     tuple-list]]))
 
 (hugsql/def-db-fns "harmony/bookings/db/sql/bookings.sql" {:quoting :mysql})
 (hugsql/def-sqlvec-fns "harmony/bookings/db/sql/bookings.sql" {:quoting :mysql})
@@ -118,14 +121,20 @@
          blocks (select-exceptions-by-bookable-start-end-type db qp)]
      (map #(format-result % {:as-keywords #{:type}}) blocks))))
 
-(defn create-block
+(defn create-blocks
   "Create a new block"
-  ([db block]
-   (let [block-id (uuid/v1)]
-     (do
-       (insert-exception db (format-insert-data
-                         (assoc block :id block-id :type :block, :seatsOverride nil)))
-       block-id))))
+  ([db blocks]
+   (do
+     (let [b-with-ids (map #(assoc % :id (uuid/v1) :type :block :seatsOverride nil) blocks)]
+       (insert-exceptions db {:exceptions (tuple-list (map format-insert-data b-with-ids)
+                                                      [:id
+                                                       :type
+                                                       :marketplaceId
+                                                       :bookableId
+                                                       :seatsOverride
+                                                       :start
+                                                       :end])})
+       (map :id b-with-ids)))))
 
 (defn fetch-bookable-with-plan
   "Fetch the bookable by marketplace id and reference id + the

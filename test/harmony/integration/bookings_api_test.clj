@@ -32,14 +32,14 @@
 
   (alter-var-root #'test-system component/start))
 
-(defn- create-block [block]
+(defn- create-blocks [blocks]
   ;; TODO Remove me!
   ;; I'm just a helper method to add blocks while we don't have endpoint
   ;; for that.
   ;;
   ;; Implement updateAvailability and remove me
   (let [db (:db-conn-pool test-system)]
-    (bookings-db/create-block db block)))
+    (bookings-db/create-blocks db blocks)))
 
 (use-fixtures :each (fn [f]
                       (setup)
@@ -252,13 +252,14 @@
                     :initialStatus :rejected
                     :start #inst "2016-09-25T00:00:00.000Z"
                     :end #inst "2016-09-26T00:00:00.000Z"})
-        _ (doseq [[start end] [[#inst "2016-09-20T00:00:00.000Z" #inst "2016-09-21T00:00:00.000Z"]
+        _ (create-blocks (map #(let [[start end] %]
+                                 {:marketplaceId (fixed-uuid :marketplaceId)
+                                  :bookableId bookable-id
+                                  :start start
+                                  :end end})
+                              [[#inst "2016-09-20T00:00:00.000Z" #inst "2016-09-21T00:00:00.000Z"]
                                [#inst "2016-09-22T00:00:00.000Z" #inst "2016-09-23T00:00:00.000Z"]
-                               [#inst "2016-08-28T00:00:00.000Z" #inst "2016-08-29T00:00:00.000Z"]]]
-            (create-block {:marketplaceId (fixed-uuid :marketplaceId)
-                           :bookableId bookable-id
-                           :start start
-                           :end end}))
+                               [#inst "2016-08-28T00:00:00.000Z" #inst "2016-08-29T00:00:00.000Z"]]))
         {:keys [status body]} (do-get "/timeslots/query"
                                    {:marketplaceId (fixed-uuid :marketplaceId)
                                     :refId (fixed-uuid :refId)
@@ -294,13 +295,14 @@
                       :initialStatus :paid
                       :start start
                       :end end}))
-        _ (doseq [[start end] [[#inst "2016-09-17T00:00:00.000Z" #inst "2016-09-18T00:00:00.000Z"]
+        _ (create-blocks (map #(let [[start end] %]
+                                 {:marketplaceId (fixed-uuid :marketplaceId)
+                                  :bookableId bookable-id
+                                  :start start
+                                  :end end})
+                              [[#inst "2016-09-17T00:00:00.000Z" #inst "2016-09-18T00:00:00.000Z"]
                                [#inst "2016-09-21T00:00:00.000Z" #inst "2016-09-22T00:00:00.000Z"]
-                               [#inst "2016-08-22T00:00:00.000Z" #inst "2016-08-24T00:00:00.000Z"]]]
-            (create-block {:marketplaceId (fixed-uuid :marketplaceId)
-                           :bookableId bookable-id
-                           :start start
-                           :end end}))
+                               [#inst "2016-08-22T00:00:00.000Z" #inst "2016-08-24T00:00:00.000Z"]]))
         {:keys [status body] :as res} (do-get "/bookables/show"
                                               {:marketplaceId (fixed-uuid :marketplaceId)
                                                :refId (fixed-uuid :refId)
