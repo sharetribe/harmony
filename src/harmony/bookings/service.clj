@@ -41,18 +41,17 @@
       blocks (assoc :blocks blocks)
       bookings (assoc :bookings bookings))))
 
-(defn- free-dates [start end bookings blocks]
+(defn- free-dates
+  "Returns a sequence of free dates in time range (start - end). Takes
+  a `bookings' parameter, which is a sequence of 'booking-like' maps,
+  e.g. bookings and blocks."
+  [start end bookings]
   (let [booking-is (map #(t/interval (time/midnight-date-time (:start %))
                                      (time/midnight-date-time (:end %)))
                         bookings)
-        block-is (map #(t/interval (time/midnight-date-time (:start %))
-                                    (time/midnight-date-time (:end %)))
-                       blocks)
         booked? (fn [dt]
                   (let [day-i (t/interval dt (t/plus dt (t/days 1)))]
-                    (or
-                     (some #(t/overlaps? day-i %) booking-is)
-                     (some #(t/overlaps? day-i %) block-is))))]
+                    (some #(t/overlaps? day-i %) booking-is)))]
     (->> (periodic/periodic-seq
           (time/midnight-date-time start)
           (time/midnight-date-time end)
@@ -87,7 +86,7 @@
             blocks (db/fetch-blocks db {:bookableId bookable-id
                                         :start start
                                         :end end})]
-        (->> (free-dates start end bookings blocks)
+        (->> (free-dates start end (concat bookings blocks))
              (map #(time-slot refId %)))))))
 
 (defn- booking-defaults [booking-cmd bookable-id]
