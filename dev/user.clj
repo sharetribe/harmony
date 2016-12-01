@@ -4,7 +4,8 @@
 
             [harmony.util.log :as log]
             [harmony.config :as config]
-            [harmony.system :as system]))
+            [harmony.system :as system]
+            [harmony.main.migrations :as migrations]))
 
 (Thread/setDefaultUncaughtExceptionHandler
  (reify Thread$UncaughtExceptionHandler
@@ -19,6 +20,18 @@
 
 (defn reset []
   (reloaded.repl/reset))
+
+(defn migrate []
+  (let [config (-> (config/config-harmony-api :dev) config/migrations-conf)]
+    (migrations/run-migratus-cmd config ["migrate"])))
+
+(defn rollback []
+  (let [config (-> (config/config-harmony-api :dev) config/migrations-conf)]
+    (migrations/run-migratus-cmd config ["rollback"])))
+
+(defn create-migration [name]
+  (let [config (-> (config/config-harmony-api :dev) config/migrations-conf)]
+    (migrations/run-migratus-cmd config ["create" name])))
 
 (comment
   ;; You can write your own temporary test code here but do not commit
