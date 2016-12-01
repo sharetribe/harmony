@@ -166,16 +166,33 @@
             (-> (response/response "Cannot reject booking.")
                 (response/status http-status/conflict)))))))))
 
-;; (def update-availability
-;;   (api/annotate
-;;    {:summary "Create and update an availability schedule for a bookable."
-;;     :parameters {:query-params {:id s/Uuid}}
-;;     :responses {http-status/ok {:body s/Str}}
-;;     :operationId :update-availability}
-;;    (interceptor/handler
-;;     ::update-availability
-;;     (fn [ctx]
-;;       (response/response "Not implemented!")))))
+(s/defschema UpdateAvailabilityCmd
+  {:blocks [{(s/optional-key :id) s/Uuid
+             (s/optional-key :start) s/Inst
+             (s/optional-key :end) s/Inst
+             :action (s/enum :create :delete)}]})
+
+(defn update-availability [deps]
+  (let [{:keys [db]} deps]
+    (api/annotate
+     {:summary "Create and update an availability schedule for a bookable."
+      :parameters {:body-params UpdateAvailabilityCmd
+                   :query-params {:marketplaceId s/Uuid
+                                  :refId s/Uuid}}
+      :responses {http-status/ok {:body s/Str}}
+      :operationId :update-availability}
+     (interceptor/handler
+      ::update-availability
+      (fn [req]
+        (let [params (get req :query-params)
+              cmd (get req :body-params)
+              update-res (bookings/update-availability db params cmd)]
+          (if update-res
+
+            ;; TODO What's the proper response format?
+            (response/response "Updated.")
+            (-> (response/response "Cannot update availability.")
+                (response/status http-status/conflict)))))))))
 
 (defn query-time-slots [deps]
   (let [{:keys [db]} deps]
@@ -217,8 +234,8 @@
   (let [interceptors (api-interceptors config)]
     (route/expand-routes
      #{["/bookables/create" :post (conj interceptors (create-bookable deps))]
-       ;; ["/bookables/updateAvailability" :post update-availability]
        ["/bookables/show" :get (conj interceptors (show-bookable deps))]
+       ["/bookables/updateAvailability" :post (conj interceptors (update-availability deps))]
        ["/timeslots/query" :get (conj interceptors (query-time-slots deps))]
        ["/bookings/initiate" :post (conj interceptors (initiate-booking deps))]
        ["/bookings/accept" :post (conj interceptors (accept-booking deps))]
