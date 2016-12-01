@@ -54,6 +54,13 @@
     (vector? v)  (into (empty v) (map stringify v))
     :else        v))
 
+(defn format-value [v]
+  (cond
+    (seq? v) (map format-value v)
+    :else (-> v
+              (stringify)
+              (uuid-to-bytes))))
+
 (defn format-result
   "Format a raw result pulled from DB to be returned as a resource
   with camelCased keys. as-keywords is a set of key names (as
@@ -74,8 +81,7 @@
   strings.."
   [insert-data]
   (some-> insert-data
-          (map-values stringify)
-          (map-values uuid-to-bytes)))
+          (map-values format-value)))
 
 (defn format-params
   "Build a query parameters map from the given params map and column
@@ -89,8 +95,7 @@
   ([params] (format-params params nil))
   ([params {:keys [cols default-cols]}]
    (let [p (-> params
-               (map-values stringify)
-               (map-values uuid-to-bytes))]
+               (map-values format-value))]
      (cond
        (keyword? cols)          (assoc p :cols [(snake-case-str cols)])
        (seq cols)               (assoc p :cols (map snake-case-str cols))

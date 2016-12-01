@@ -121,6 +121,19 @@
          blocks (select-exceptions-by-bookable-start-end-type db qp)]
      (map #(format-result % {:as-keywords #{:type}}) blocks))))
 
+(defn modify-blocks [db blocks]
+  (jdbc/with-db-transaction [tx db {:isolation :repeatable-read}]
+    (let [by-action (group-by :action blocks)]
+
+      ;; Delete blocks
+      (delete-exceptions tx (format-params {:ids (map :id (:delete by-action))}))
+
+      ;; Edit blocks
+      ;; Not implemented
+
+      ;; Add blocks if free
+      )))
+
 (defn create-blocks
   "Create a new block"
   ([db blocks]

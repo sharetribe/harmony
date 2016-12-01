@@ -65,6 +65,7 @@ values :tuple*:exceptions
 -- :doc Get exceptions by bookableId, start, end, and type
 select :i*:cols from exceptions
 where bookable_id = :bookableId
+AND deleted = false
 AND type = :type
 AND (
   (end > :start AND end <= :end)
@@ -73,3 +74,7 @@ AND (
   OR
   (start <= :start AND end >= :end)
 );
+
+-- :name delete-exceptions :! :n
+-- :Doc Delete exceptions
+update exceptions set deleted = true where id in (:v*:ids)
