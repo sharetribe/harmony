@@ -33,14 +33,19 @@
 
 (defn fetch-bookable
   [db params]
-  (when-let [{:keys [bookable active-plan bookings]}
+  (when-let [{:keys [bookable active-plan bookings blocks]}
              (db/fetch-bookable-with-plan
               db
               params)]
     (cond-> (assoc bookable :activePlan active-plan)
+      blocks (assoc :blocks blocks)
       bookings (assoc :bookings bookings))))
 
-(defn- free-dates [start end bookings]
+(defn- free-dates
+  "Returns a sequence of free dates in time range (start - end). Takes
+  a `bookings' parameter, which is a sequence of 'booking-like' maps,
+  e.g. bookings and blocks."
+  [start end bookings]
   (let [booking-is (map #(t/interval (time/midnight-date-time (:start %))
                                      (time/midnight-date-time (:end %)))
                         bookings)
@@ -77,8 +82,11 @@
       (let [bookings (db/fetch-bookings db {:bookableId bookable-id
                                             :statuses #{:initial :paid :accepted}
                                             :start start
-                                            :end end})]
-        (->> (free-dates start end bookings)
+                                            :end end})
+            blocks (db/fetch-blocks db {:bookableId bookable-id
+                                        :start start
+                                        :end end})]
+        (->> (free-dates start end (concat bookings blocks))
              (map #(time-slot refId %)))))))
 
 (defn- booking-defaults [booking-cmd bookable-id]

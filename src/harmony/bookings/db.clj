@@ -105,6 +105,28 @@
       (select-plan-by-id db qp)
       {:as-keywords #{:planMode}}))))
 
+(defn fetch-blocks
+  ([db query-params] (fetch-blocks db query-params {}))
+  ([db {:keys [bookableId start end]} {:keys [cols]}]
+   (let [qp (format-params
+             {:bookableId bookableId :start start :end end :type :block}
+             {:cols cols :default-cols #{:id
+                                         :marketplaceId
+                                         :bookableId
+                                         :start
+                                         :end}})
+         blocks (select-exceptions-by-bookable-start-end-type db qp)]
+     (map #(format-result % {:as-keywords #{:type}}) blocks))))
+
+(defn create-block
+  "Create a new block"
+  ([db block]
+   (let [block-id (uuid/v1)]
+     (do
+       (insert-exception db (format-insert-data
+                         (assoc block :id block-id :type :block, :seatsOverride nil)))
+       block-id))))
+
 (defn fetch-bookable-with-plan
   "Fetch the bookable by marketplace id and reference id + the
   associated active plan. Optionally include bookings and blocks from
@@ -120,8 +142,12 @@
             bookings (when (:bookings include)
                        (fetch-bookings
                         tx
-                        {:bookableId (:id b) :start start :end end}))]
+                        {:bookableId (:id b) :start start :end end}))
+            blocks (when (:blocks include)
+                     (fetch-blocks
+                      tx
+                      {:bookableId (:id b) :start start :end end}))]
         {:bookable (dissoc b :activePlanId)
          :active-plan (fetch-plan tx {:id (:activePlanId b)})
-         :bookings bookings}))))
-
+         :bookings bookings
+         :blocks blocks}))))
