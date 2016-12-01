@@ -125,3 +125,29 @@
       (db/modify-booking-status db {:id booking-id :status :rejected})
       (db/fetch-booking db {:id booking-id}))))
 
+(defn- block-defaults [block marketplace-id bookable-id]
+  (let [{:keys [id start end action]} block]
+    (case action
+      :create {:id id
+               :marketplaceId marketplace-id
+               :bookableId bookable-id
+               :seatsOveride nil
+               :start (time/midnight-date start)
+               :end (time/midnight-date end)
+               :action action}
+      :delete {:id id
+               :marketplaceId marketplace-id
+               :bookableId bookable-id
+               :action action})))
+
+(defn update-availability [db params cmd]
+  (let [{:keys [marketplaceId refId]} params
+        {:keys [blocks]} cmd]
+    (let [{bookable-id :id} (db/fetch-bookable
+                             db
+                             {:marketplaceId marketplaceId :refId refId}
+                             {:cols :id})]
+      (when bookable-id
+        (let [blocks-with-defaults (map #(block-defaults % marketplaceId bookable-id) blocks)
+              modifications (db/batch-modify-blocks db blocks-with-defaults)]
+          modifications)))))
