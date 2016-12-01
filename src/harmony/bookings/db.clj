@@ -121,18 +121,11 @@
          blocks (select-exceptions-by-bookable-start-end-type db qp)]
      (map #(format-result % {:as-keywords #{:type}}) blocks))))
 
-(defn modify-blocks [db blocks]
-  (jdbc/with-db-transaction [tx db {:isolation :repeatable-read}]
-    (let [by-action (group-by :action blocks)]
-
-      ;; Delete blocks
-      (delete-exceptions tx (format-params {:ids (map :id (:delete by-action))}))
-
-      ;; Edit blocks
-      ;; Not implemented
-
-      ;; Add blocks if free
-      )))
+(defn remove-blocks [db blocks]
+  "Remove block"
+  (let [ids (map :id blocks)]
+    (delete-exceptions-by-id-type db (format-params {:type :block :ids ids}))
+    ids))
 
 (defn create-blocks
   "Create a new block"
@@ -148,6 +141,23 @@
                                                        :start
                                                        :end])})
        (map :id b-with-ids)))))
+
+(defn batch-modify-blocks [db blocks]
+  "Modify multiple blocks in one batch operations. Available
+  actions: :create, :delete.
+
+  Example input:
+  [{:action :delete :id <uuid>},
+   {:action :create :start <date> :end <date>}]"
+  (jdbc/with-db-transaction [tx db {:isolation :repeatable-read}]
+    (let [by-action (group-by :action blocks)
+          deletes (:delete by-action)
+          creates (:create by-action)
+          deleted-ids (when deletes (remove-blocks tx deletes))
+          created-ids (when creates (create-blocks tx creates))]
+
+      {:deleted deleted-ids
+       :created created-ids})))
 
 (defn fetch-bookable-with-plan
   "Fetch the bookable by marketplace id and reference id + the

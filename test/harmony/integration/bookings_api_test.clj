@@ -39,7 +39,7 @@
   ;;
   ;; Implement updateAvailability and remove me
   (let [db (:db-conn-pool test-system)]
-    (bookings-db/create-blocks db blocks)))
+    (bookings-db/batch-modify-blocks db (map #(assoc % :action :create) blocks))))
 
 (use-fixtures :each (fn [f]
                       (setup)
@@ -48,8 +48,7 @@
 
 (defn- delete-block [uuid]
   (let [db (:db-conn-pool test-system)]
-    (bookings-db/modify-blocks db [{:action :delete :id uuid}])
-  ))
+    (bookings-db/batch-modify-blocks db [{:action :delete :id uuid}])))
 
 (defn- do-post [endpoint query body]
   (client/post (str "http://localhost:8086" endpoint)
@@ -257,14 +256,14 @@
                     :initialStatus :rejected
                     :start #inst "2016-09-25T00:00:00.000Z"
                     :end #inst "2016-09-26T00:00:00.000Z"})
-        block-ids (create-blocks (map #(let [[start end] %]
-                                 {:marketplaceId (fixed-uuid :marketplaceId)
-                                  :bookableId bookable-id
-                                  :start start
-                                  :end end})
-                              [[#inst "2016-09-20T00:00:00.000Z" #inst "2016-09-21T00:00:00.000Z"]
-                               [#inst "2016-09-22T00:00:00.000Z" #inst "2016-09-23T00:00:00.000Z"]
-                               [#inst "2016-08-28T00:00:00.000Z" #inst "2016-08-29T00:00:00.000Z"]]))
+        block-ids (:created (create-blocks (map #(let [[start end] %]
+                                                   {:marketplaceId (fixed-uuid :marketplaceId)
+                                                    :bookableId bookable-id
+                                                    :start start
+                                                    :end end})
+                                                [[#inst "2016-09-20T00:00:00.000Z" #inst "2016-09-21T00:00:00.000Z"]
+                                                 [#inst "2016-09-22T00:00:00.000Z" #inst "2016-09-23T00:00:00.000Z"]
+                                                 [#inst "2016-08-28T00:00:00.000Z" #inst "2016-08-29T00:00:00.000Z"]])))
         _ (delete-block (first block-ids))
         {:keys [status body]} (do-get "/timeslots/query"
                                    {:marketplaceId (fixed-uuid :marketplaceId)
