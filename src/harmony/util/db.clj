@@ -54,12 +54,9 @@
     (vector? v)  (into (empty v) (map stringify v))
     :else        v))
 
-(defn format-value [v]
-  (cond
-    (seq? v) (map format-value v)
-    :else (-> v
-              (stringify)
-              (uuid-to-bytes))))
+(defn- format-value [v]
+  (if (seq? v) (map format-value v)
+    (-> v stringify uuid-to-bytes)))
 
 (defn format-result
   "Format a raw result pulled from DB to be returned as a resource

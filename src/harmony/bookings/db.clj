@@ -124,37 +124,33 @@
 (defn remove-blocks [db blocks]
   "Remove block"
   (let [ids (map :id blocks)]
-    (delete-exceptions-by-id-type db (format-params {:type :block :ids ids}))
+    (update-exceptions-deleted-by-ids db (format-params {:deleted true :ids ids}))
     ids))
 
 (defn create-blocks
   "Create a new block"
   ([db blocks]
-   (do
-     (let [b-with-ids (map #(assoc % :id (uuid/v1) :type :block :seatsOverride nil) blocks)]
-       (insert-exceptions db {:exceptions (tuple-list (map format-insert-data b-with-ids)
-                                                      [:id
-                                                       :type
-                                                       :marketplaceId
-                                                       :bookableId
-                                                       :seatsOverride
-                                                       :start
-                                                       :end])})
-       (map :id b-with-ids)))))
+   (let [b-with-ids (map #(assoc % :id (uuid/v1) :type :block :seatsOverride nil) blocks)]
+     (insert-exceptions db {:exceptions (tuple-list (map format-insert-data b-with-ids)
+                                                    [:id
+                                                     :type
+                                                     :marketplaceId
+                                                     :bookableId
+                                                     :seatsOverride
+                                                     :start
+                                                     :end])})
+     (map :id b-with-ids))))
 
-(defn batch-modify-blocks [db blocks]
+(defn batch-modify-blocks [db {:keys [create delete]}]
   "Modify multiple blocks in one batch operations. Available
-  actions: :create, :delete.
+  modifications: :create, :delete.
 
-  Example input:
-  [{:action :delete :id <uuid>},
-   {:action :create :start <date> :end <date>}]"
+  Example input (modifications):
+  [{:delete [:id <uuid>],
+    :create [:start <date> :end <date>]}"
   (jdbc/with-db-transaction [tx db {:isolation :repeatable-read}]
-    (let [by-action (group-by :action blocks)
-          deletes (:delete by-action)
-          creates (:create by-action)
-          deleted-ids (when deletes (remove-blocks tx deletes))
-          created-ids (when creates (create-blocks tx creates))]
+    (let [deleted-ids (when delete (remove-blocks tx delete))
+          created-ids (when create (create-blocks tx create))]
 
       {:deleted deleted-ids
        :created created-ids})))

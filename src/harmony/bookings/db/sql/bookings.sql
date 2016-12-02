@@ -75,7 +75,6 @@ AND (
   (start <= :start AND end >= :end)
 );
 
--- :name delete-exceptions-by-id-type :! :n
--- :Doc Delete exceptions
-update exceptions set deleted = true where id in (:v*:ids)
-AND type = :type
+-- :name update-exceptions-deleted-by-ids :! :n
+-- :Doc Update exceptions
+update exceptions set deleted = :deleted where id in (:v*:ids)

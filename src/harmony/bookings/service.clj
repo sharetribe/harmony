@@ -3,6 +3,7 @@
             [clj-time.periodic :as periodic]
             [clj-time.coerce :as coerce]
             [harmony.util.time :as time]
+            [harmony.util.data :refer [map-values]]
             [harmony.bookings.db :as db]))
 
 (defn- bookable-defaults [m-id ref-id author-id]
@@ -133,21 +134,22 @@
                :bookableId bookable-id
                :seatsOveride nil
                :start (time/midnight-date start)
-               :end (time/midnight-date end)
-               :action action}
+               :end (time/midnight-date end)}
       :delete {:id id
                :marketplaceId marketplace-id
-               :bookableId bookable-id
-               :action action})))
+               :bookableId bookable-id})))
+
+(defn- map-seq-values [m f]
+  (map-values m #(map f %)))
 
 (defn update-availability [db params cmd]
   (let [{:keys [marketplaceId refId]} params
-        {:keys [blocks]} cmd]
-    (let [{bookable-id :id} (db/fetch-bookable
-                             db
-                             {:marketplaceId marketplaceId :refId refId}
-                             {:cols :id})]
-      (when bookable-id
-        (let [blocks-with-defaults (map #(block-defaults % marketplaceId bookable-id) blocks)
-              modifications (db/batch-modify-blocks db blocks-with-defaults)]
-          modifications)))))
+        {:keys [blocks]} cmd
+        by-action (group-by :action blocks)
+        {bookable-id :id} (db/fetch-bookable
+                           db
+                           {:marketplaceId marketplaceId :refId refId}
+                           {:cols :id})
+        modifications (map-seq-values by-action #(block-defaults % marketplaceId bookable-id))]
+    (when bookable-id
+      (db/batch-modify-blocks db modifications))))
