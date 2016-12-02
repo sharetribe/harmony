@@ -121,6 +121,20 @@
          blocks (select-exceptions-by-bookable-start-end-type db qp)]
      (map #(format-result % {:as-keywords #{:type}}) blocks))))
 
+(defn fetch-blocks-by-ids
+  ([db query-params] (fetch-blocks-by-ids db query-params {}))
+  ([db {:keys [ids bookableId]} {:keys [cols]}]
+   (let [qp (format-params
+             {:ids ids :bookableId bookableId}
+             {:cols cols :default-cols #{:id
+                                         :marketplaceId
+                                         :bookableId
+                                         :start
+                                         :end}})
+
+         blocks (select-exceptions-by-ids-bookable db qp)]
+     (map #(format-result % {:as-keywords #{:type}}) blocks))))
+
 (defn remove-blocks [db blocks]
   "Remove block"
   (let [ids (map :id blocks)]

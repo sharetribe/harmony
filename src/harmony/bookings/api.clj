@@ -194,6 +194,32 @@
             (-> (response/response "Cannot update availability.")
                 (response/status http-status/conflict)))))))))
 
+(s/defschema DeleteBlocksCmd
+  {:blocks [{:id s/Uuid}]})
+
+(defn delete-blocks [deps]
+  (let [{:keys [db]} deps]
+    (api/annotate
+     {:summary "Delete a block"
+      :parameters {:body-params DeleteBlocksCmd
+                   :query-params {:marketplaceId s/Uuid
+                                  :refId s/Uuid}}
+      :responses {http-status/created {:body (resource/query-response-schema types/Block)}
+                  http-status/not-found {:body s/Str}}
+      :operationId :delete-blocks}
+      (interceptor/handler
+       ::delete-blocks
+       (fn [req]
+         (let [params (get req :query-params)
+               cmd (get req :body-params)
+               deleted-blocks (bookings/delete-blocks db params cmd)]
+           (if deleted-blocks
+             (response/response
+              (resource/query-response types/Block deleted-blocks))
+             (-> (response/response
+                  "No bookable found for given marketplaceId and refId.")
+                 (response/status http-status/not-found)))))))))
+
 (defn query-time-slots [deps]
   (let [{:keys [db]} deps]
     (api/annotate
@@ -236,6 +262,7 @@
      #{["/bookables/create" :post (conj interceptors (create-bookable deps))]
        ["/bookables/show" :get (conj interceptors (show-bookable deps))]
        ["/bookables/updateAvailability" :post (conj interceptors (update-availability deps))]
+       ["/bookables/deleteBlocks" :post (conj interceptors (delete-blocks deps))]
        ["/timeslots/query" :get (conj interceptors (query-time-slots deps))]
        ["/bookings/initiate" :post (conj interceptors (initiate-booking deps))]
        ["/bookings/accept" :post (conj interceptors (accept-booking deps))]

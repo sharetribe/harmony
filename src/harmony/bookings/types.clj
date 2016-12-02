@@ -37,6 +37,12 @@
      :start s/Inst
      :end s/Inst}}))
 
+(def Blocks
+  (resource/api-resource
+   {:type :blocks
+    :attrs
+    {:blocks [#'Block]}}))
+
 (def Block
   (resource/api-resource
    {:type :block

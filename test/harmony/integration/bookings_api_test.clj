@@ -263,11 +263,10 @@
                                                            {:start #inst "2016-08-28T00:00:00.000Z"
                                                             :end #inst "2016-08-29T00:00:00.000Z"
                                                             :action :create}]}))
-        _ (do-post "/bookables/updateAvailability"
-                   {:marketplaceId (fixed-uuid :marketplaceId)
-                    :refId (fixed-uuid :refId)}
-                   {:blocks [{:id (first block-ids)
-                              :action :delete}]})
+        delete-res (do-post "/bookables/deleteBlocks"
+                            {:marketplaceId (fixed-uuid :marketplaceId)
+                             :refId (fixed-uuid :refId)}
+                             {:blocks [{:id (first block-ids)}]})
         {:keys [status body]} (do-get "/timeslots/query"
                                    {:marketplaceId (fixed-uuid :marketplaceId)
                                     :refId (fixed-uuid :refId)

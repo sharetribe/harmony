@@ -153,3 +153,15 @@
         modifications (map-seq-values by-action #(block-defaults % marketplaceId bookable-id))]
     (when bookable-id
       (db/batch-modify-blocks db modifications))))
+
+(defn delete-blocks [db params cmd]
+  (let [{:keys [marketplaceId refId]} params
+        {:keys [blocks]} cmd
+        {bookable-id :id} (db/fetch-bookable
+                           db
+                           {:marketplaceId marketplaceId :refId refId}
+                           {:cols :id})]
+    (when bookable-id
+      (let [deleted-blocks (db/fetch-blocks-by-ids db {:ids (map :id blocks) :bookableId bookable-id})]
+        (db/remove-blocks db deleted-blocks)
+        deleted-blocks))))
