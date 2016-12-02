@@ -32,15 +32,6 @@
 
   (alter-var-root #'test-system component/start))
 
-(defn- update-availability [params cmd]
-  ;; TODO Remove me!
-  ;; I'm just a helper method to add blocks while we don't have endpoint
-  ;; for that.
-  ;;
-  ;; Implement updateAvailability and remove me
-  (let [db (:db-conn-pool test-system)]
-    (bookings/update-availability db params cmd)))
-
 (use-fixtures :each (fn [f]
                       (setup)
                       (f)
@@ -227,7 +218,6 @@
                               {:marketplaceId (fixed-uuid :marketplaceId)
                                :refId (fixed-uuid :refId)
                                :authorId (fixed-uuid :authorId)})
-        bookable-id (get-in bookable-res [:body :data :id])
         _ (do-post "/bookings/initiate"
                    {}
                    {:marketplaceId (fixed-uuid :marketplaceId)
@@ -252,26 +242,27 @@
                     :initialStatus :rejected
                     :start #inst "2016-09-25T00:00:00.000Z"
                     :end #inst "2016-09-26T00:00:00.000Z"})
-        block-ids (:created (update-availability {:marketplaceId (fixed-uuid :marketplaceId)
-                                                  :refId (fixed-uuid :refId)}
-                                                 {:blocks [{:start #inst "2016-09-20T00:00:00.000Z"
-                                                            :end #inst "2016-09-21T00:00:00.000Z"
-                                                            :action :create}
-                                                           {:start #inst "2016-09-22T00:00:00.000Z"
-                                                            :end #inst "2016-09-23T00:00:00.000Z"
-                                                            :action :create}
-                                                           {:start #inst "2016-08-28T00:00:00.000Z"
-                                                            :end #inst "2016-08-29T00:00:00.000Z"
-                                                            :action :create}]}))
+        create-blocks-res (do-post "/bookables/createBlocks"
+                                   {:marketplaceId (fixed-uuid :marketplaceId)
+                                    :refId (fixed-uuid :refId)}
+                                   {:blocks [{:start #inst "2016-09-20T00:00:00.000Z"
+                                              :end #inst "2016-09-21T00:00:00.000Z"}
+                                             {:start #inst "2016-09-22T00:00:00.000Z"
+                                              :end #inst "2016-09-23T00:00:00.000Z"}
+                                             {:start #inst "2016-08-28T00:00:00.000Z"
+                                              :end #inst "2016-08-29T00:00:00.000Z"}]})
+        created-block-ids (map :id (get-in create-blocks-res [:body :data]))
+
+        ;; Test also that deleted blocks don't affect on timeslot calculations
         delete-res (do-post "/bookables/deleteBlocks"
                             {:marketplaceId (fixed-uuid :marketplaceId)
                              :refId (fixed-uuid :refId)}
-                             {:blocks [{:id (first block-ids)}]})
+                            {:blocks [{:id (first created-block-ids)}]})
         {:keys [status body]} (do-get "/timeslots/query"
-                                   {:marketplaceId (fixed-uuid :marketplaceId)
-                                    :refId (fixed-uuid :refId)
-                                    :start "2016-09-19T00:00:00.000Z"
-                                    :end "2016-09-26T00:00:00.000Z"})
+                                      {:marketplaceId (fixed-uuid :marketplaceId)
+                                       :refId (fixed-uuid :refId)
+                                       :start "2016-09-19T00:00:00.000Z"
+                                       :end "2016-09-26T00:00:00.000Z"})
         free-timeslots (map timeslot [#inst "2016-09-20T00:00:00.000Z"
                                       #inst "2016-09-21T00:00:00.000Z"
                                       #inst "2016-09-25T00:00:00.000Z"])
@@ -291,7 +282,6 @@
                               {:marketplaceId (fixed-uuid :marketplaceId)
                                :refId (fixed-uuid :refId)
                                :authorId (fixed-uuid :authorId)})
-        bookable-id (get-in bookable-res [:body :data :id])
         _ (doseq [[start end] [[#inst "2016-09-19T00:00:00.000Z" #inst "2016-09-20T00:00:00.000Z"]
                                [#inst "2016-09-22T00:00:00.000Z" #inst "2016-09-24T00:00:00.000Z"]
                                [#inst "2016-08-22T00:00:00.000Z" #inst "2016-08-24T00:00:00.000Z"]]]
@@ -303,17 +293,15 @@
                       :initialStatus :paid
                       :start start
                       :end end}))
-        _ (update-availability {:marketplaceId (fixed-uuid :marketplaceId)
-                                :refId (fixed-uuid :refId)}
-                               {:blocks [{:start #inst "2016-09-17T00:00:00.000Z"
-                                          :end #inst "2016-09-18T00:00:00.000Z"
-                                          :action :create}
-                                         {:start #inst "2016-09-21T00:00:00.000Z"
-                                          :end #inst "2016-09-22T00:00:00.000Z"
-                                          :action :create}
-                                         {:start #inst "2016-08-22T00:00:00.000Z"
-                                          :end #inst "2016-08-24T00:00:00.000Z"
-                                          :action :create}]})
+        _ (do-post "/bookables/createBlocks"
+                   {:marketplaceId (fixed-uuid :marketplaceId)
+                    :refId (fixed-uuid :refId)}
+                   {:blocks [{:start #inst "2016-09-17T00:00:00.000Z"
+                              :end #inst "2016-09-18T00:00:00.000Z"}
+                             {:start #inst "2016-09-21T00:00:00.000Z"
+                              :end #inst "2016-09-22T00:00:00.000Z"}
+                             {:start #inst "2016-08-22T00:00:00.000Z"
+                              :end #inst "2016-08-24T00:00:00.000Z"}]})
         {:keys [status body] :as res} (do-get "/bookables/show"
                                               {:marketplaceId (fixed-uuid :marketplaceId)
                                                :refId (fixed-uuid :refId)

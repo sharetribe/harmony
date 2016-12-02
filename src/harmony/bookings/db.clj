@@ -155,20 +155,6 @@
                                                      :end])})
      (map :id b-with-ids))))
 
-(defn batch-modify-blocks [db {:keys [create delete]}]
-  "Modify multiple blocks in one batch operations. Available
-  modifications: :create, :delete.
-
-  Example input (modifications):
-  [{:delete [:id <uuid>],
-    :create [:start <date> :end <date>]}"
-  (jdbc/with-db-transaction [tx db {:isolation :repeatable-read}]
-    (let [deleted-ids (when delete (remove-blocks tx delete))
-          created-ids (when create (create-blocks tx create))]
-
-      {:deleted deleted-ids
-       :created created-ids})))
-
 (defn fetch-bookable-with-plan
   "Fetch the bookable by marketplace id and reference id + the
   associated active plan. Optionally include bookings and blocks from

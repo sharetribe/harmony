@@ -127,32 +127,24 @@
       (db/fetch-booking db {:id booking-id}))))
 
 (defn- block-defaults [block marketplace-id bookable-id]
-  (let [{:keys [id start end action]} block]
-    (case action
-      :create {:id id
-               :marketplaceId marketplace-id
-               :bookableId bookable-id
-               :seatsOveride nil
-               :start (time/midnight-date start)
-               :end (time/midnight-date end)}
-      :delete {:id id
-               :marketplaceId marketplace-id
-               :bookableId bookable-id})))
+  (let [{:keys [id start end]} block]
+    {:id id
+     :marketplaceId marketplace-id
+     :bookableId bookable-id
+     :seatsOveride nil
+     :start (time/midnight-date start)
+     :end (time/midnight-date end)}))
 
-(defn- map-seq-values [m f]
-  (map-values m #(map f %)))
-
-(defn update-availability [db params cmd]
+(defn create-blocks [db params cmd]
   (let [{:keys [marketplaceId refId]} params
         {:keys [blocks]} cmd
-        by-action (group-by :action blocks)
         {bookable-id :id} (db/fetch-bookable
                            db
                            {:marketplaceId marketplaceId :refId refId}
-                           {:cols :id})
-        modifications (map-seq-values by-action #(block-defaults % marketplaceId bookable-id))]
+                           {:cols :id})]
     (when bookable-id
-      (db/batch-modify-blocks db modifications))))
+      (let [block-ids (db/create-blocks db (map #(block-defaults % marketplaceId bookable-id) blocks))]
+        (db/fetch-blocks-by-ids db {:ids block-ids :bookableId bookable-id})))))
 
 (defn delete-blocks [db params cmd]
   (let [{:keys [marketplaceId refId]} params

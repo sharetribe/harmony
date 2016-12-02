@@ -166,33 +166,32 @@
             (-> (response/response "Cannot reject booking.")
                 (response/status http-status/conflict)))))))))
 
-(s/defschema UpdateAvailabilityCmd
-  {:blocks [{(s/optional-key :id) s/Uuid
-             (s/optional-key :start) s/Inst
-             (s/optional-key :end) s/Inst
-             :action (s/enum :create :delete)}]})
+(s/defschema CreateBlocksCmd
+  {:blocks [{:start s/Inst
+             :end s/Inst}]})
 
-(defn update-availability [deps]
+(defn create-blocks [deps]
   (let [{:keys [db]} deps]
     (api/annotate
-     {:summary "Create and update an availability schedule for a bookable."
-      :parameters {:body-params UpdateAvailabilityCmd
+     {:summary "Create blocks"
+      :parameters {:body-params CreateBlocksCmd
                    :query-params {:marketplaceId s/Uuid
                                   :refId s/Uuid}}
-      :responses {http-status/ok {:body s/Str}}
-      :operationId :update-availability}
-     (interceptor/handler
-      ::update-availability
-      (fn [req]
-        (let [params (get req :query-params)
-              cmd (get req :body-params)
-              update-res (bookings/update-availability db params cmd)]
-          (if update-res
-
-            ;; TODO What's the proper response format?
-            (response/response "Updated.")
-            (-> (response/response "Cannot update availability.")
-                (response/status http-status/conflict)))))))))
+      :responses {http-status/created {:body (resource/query-response-schema types/Block)}
+                  http-status/not-found {:body s/Str}}
+      :operationId :create-blocks}
+      (interceptor/handler
+       ::create-blocks
+       (fn [req]
+         (let [params (get req :query-params)
+               cmd (get req :body-params)
+               created-blocks (bookings/create-blocks db params cmd)]
+           (if created-blocks
+             (response/response
+              (resource/query-response types/Block created-blocks))
+             (-> (response/response
+                  "No bookable found for given marketplaceId and refId.")
+                 (response/status http-status/not-found)))))))))
 
 (s/defschema DeleteBlocksCmd
   {:blocks [{:id s/Uuid}]})
@@ -261,8 +260,8 @@
     (route/expand-routes
      #{["/bookables/create" :post (conj interceptors (create-bookable deps))]
        ["/bookables/show" :get (conj interceptors (show-bookable deps))]
-       ["/bookables/updateAvailability" :post (conj interceptors (update-availability deps))]
        ["/bookables/deleteBlocks" :post (conj interceptors (delete-blocks deps))]
+       ["/bookables/createBlocks" :post (conj interceptors (create-blocks deps))]
        ["/timeslots/query" :get (conj interceptors (query-time-slots deps))]
        ["/bookings/initiate" :post (conj interceptors (initiate-booking deps))]
        ["/bookings/accept" :post (conj interceptors (accept-booking deps))]
