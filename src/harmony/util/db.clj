@@ -100,10 +100,7 @@
             (seq default-cols)) (assoc p :cols (map snake-case-str default-cols))
        :else                    p))))
 
-(defn- select-values [map ks]
-  (reduce #(conj %1 (map %2)) [] ks))
-
 (defn tuple-list [values order-ks]
   "Build a sorted tuple list from a vector of maps. Give an array of
   maps and a list of keys in the desired order"
-  (map #(select-values % order-ks) values))
+  (map (apply juxt order-ks) values))

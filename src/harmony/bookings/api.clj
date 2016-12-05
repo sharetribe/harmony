@@ -177,7 +177,7 @@
       :parameters {:body-params CreateBlocksCmd
                    :query-params {:marketplaceId s/Uuid
                                   :refId s/Uuid}}
-      :responses {http-status/created {:body (resource/query-response-schema types/Block)}
+      :responses {http-status/ok {:body (resource/query-response-schema types/Block)}
                   http-status/not-found {:body s/Str}}
       :operationId :create-blocks}
       (interceptor/handler
@@ -199,7 +199,7 @@
 (defn delete-blocks [deps]
   (let [{:keys [db]} deps]
     (api/annotate
-     {:summary "Delete a block"
+     {:summary "Delete blocks"
       :parameters {:body-params DeleteBlocksCmd
                    :query-params {:marketplaceId s/Uuid
                                   :refId s/Uuid}}
