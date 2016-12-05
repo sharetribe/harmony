@@ -79,6 +79,7 @@ AND (
 -- :doc Get exceptions by ids and bookableId
 select :i*:cols from exceptions
 where id in (:v*:ids)
+and deleted = false
 and bookable_id = :bookableId
 
 -- :name update-exceptions-deleted-by-ids :! :n
