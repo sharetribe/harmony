@@ -243,9 +243,10 @@
                     :start #inst "2016-09-25T00:00:00.000Z"
                     :end #inst "2016-09-26T00:00:00.000Z"})
         create-blocks-res (do-post "/bookables/createBlocks"
+                                   nil
                                    {:marketplaceId (fixed-uuid :marketplaceId)
-                                    :refId (fixed-uuid :refId)}
-                                   {:blocks [{:start #inst "2016-09-20T00:00:00.000Z"
+                                    :refId (fixed-uuid :refId)
+                                    :blocks [{:start #inst "2016-09-20T00:00:00.000Z"
                                               :end #inst "2016-09-21T00:00:00.000Z"}
                                              {:start #inst "2016-09-22T00:00:00.000Z"
                                               :end #inst "2016-09-23T00:00:00.000Z"}
@@ -255,9 +256,10 @@
 
         ;; Test also that deleted blocks don't affect on timeslot calculations
         delete-res (do-post "/bookables/deleteBlocks"
+                            nil
                             {:marketplaceId (fixed-uuid :marketplaceId)
-                             :refId (fixed-uuid :refId)}
-                            {:blocks [{:id (first created-block-ids)}]})
+                             :refId (fixed-uuid :refId)
+                             :blocks [{:id (first created-block-ids)}]})
         {:keys [status body]} (do-get "/timeslots/query"
                                       {:marketplaceId (fixed-uuid :marketplaceId)
                                        :refId (fixed-uuid :refId)
@@ -294,9 +296,10 @@
                       :start start
                       :end end}))
         _ (do-post "/bookables/createBlocks"
+                   nil
                    {:marketplaceId (fixed-uuid :marketplaceId)
-                    :refId (fixed-uuid :refId)}
-                   {:blocks [{:start #inst "2016-09-17T00:00:00.000Z"
+                    :refId (fixed-uuid :refId)
+                    :blocks [{:start #inst "2016-09-17T00:00:00.000Z"
                               :end #inst "2016-09-18T00:00:00.000Z"}
                              {:start #inst "2016-09-21T00:00:00.000Z"
                               :end #inst "2016-09-22T00:00:00.000Z"}

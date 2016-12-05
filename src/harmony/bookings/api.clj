@@ -167,25 +167,24 @@
                 (response/status http-status/conflict)))))))))
 
 (s/defschema CreateBlocksCmd
-  {:blocks [{:start s/Inst
+  {:marketplaceId s/Uuid
+   :refId s/Uuid
+   :blocks [{:start s/Inst
              :end s/Inst}]})
 
 (defn create-blocks [deps]
   (let [{:keys [db]} deps]
     (api/annotate
      {:summary "Create blocks"
-      :parameters {:body-params CreateBlocksCmd
-                   :query-params {:marketplaceId s/Uuid
-                                  :refId s/Uuid}}
+      :parameters {:body-params CreateBlocksCmd}
       :responses {http-status/ok {:body (resource/query-response-schema types/Block)}
                   http-status/not-found {:body s/Str}}
       :operationId :create-blocks}
       (interceptor/handler
        ::create-blocks
        (fn [req]
-         (let [params (get req :query-params)
-               cmd (get req :body-params)
-               created-blocks (bookings/create-blocks db params cmd)]
+         (let [cmd (get req :body-params)
+               created-blocks (bookings/create-blocks db cmd)]
            (if created-blocks
              (response/response
               (resource/query-response types/Block created-blocks))
@@ -194,24 +193,23 @@
                  (response/status http-status/not-found)))))))))
 
 (s/defschema DeleteBlocksCmd
-  {:blocks [{:id s/Uuid}]})
+  {:marketplaceId s/Uuid
+   :refId s/Uuid
+   :blocks [{:id s/Uuid}]})
 
 (defn delete-blocks [deps]
   (let [{:keys [db]} deps]
     (api/annotate
      {:summary "Delete blocks"
-      :parameters {:body-params DeleteBlocksCmd
-                   :query-params {:marketplaceId s/Uuid
-                                  :refId s/Uuid}}
+      :parameters {:body-params DeleteBlocksCmd}
       :responses {http-status/created {:body (resource/query-response-schema types/Block)}
                   http-status/not-found {:body s/Str}}
       :operationId :delete-blocks}
       (interceptor/handler
        ::delete-blocks
        (fn [req]
-         (let [params (get req :query-params)
-               cmd (get req :body-params)
-               deleted-blocks (bookings/delete-blocks db params cmd)]
+         (let [cmd (get req :body-params)
+               deleted-blocks (bookings/delete-blocks db cmd)]
            (if deleted-blocks
              (response/response
               (resource/query-response types/Block deleted-blocks))

@@ -135,9 +135,8 @@
      :start (time/midnight-date start)
      :end (time/midnight-date end)}))
 
-(defn create-blocks [db params cmd]
-  (let [{:keys [marketplaceId refId]} params
-        {:keys [blocks]} cmd
+(defn create-blocks [db cmd]
+  (let [{:keys [marketplaceId refId blocks]} cmd
         {bookable-id :id} (db/fetch-bookable
                            db
                            {:marketplaceId marketplaceId :refId refId}
@@ -146,9 +145,8 @@
       (let [block-ids (db/create-blocks db (map #(block-defaults % marketplaceId bookable-id) blocks))]
         (db/fetch-blocks-by-ids db {:ids block-ids :bookableId bookable-id})))))
 
-(defn delete-blocks [db params cmd]
-  (let [{:keys [marketplaceId refId]} params
-        {:keys [blocks]} cmd
+(defn delete-blocks [db cmd]
+  (let [{:keys [marketplaceId refId blocks]} cmd
         {bookable-id :id} (db/fetch-bookable
                            db
                            {:marketplaceId marketplaceId :refId refId}
