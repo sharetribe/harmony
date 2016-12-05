@@ -21,17 +21,17 @@
 (defn reset []
   (reloaded.repl/reset))
 
+(defn dev-config []
+  (-> (config/config-harmony-api :dev) config/migrations-conf))
+
 (defn migrate []
-  (let [config (-> (config/config-harmony-api :dev) config/migrations-conf)]
-    (migrations/run-migratus-cmd config ["migrate"])))
+  (migrations/run-migratus-cmd (dev-config) ["migrate"]))
 
 (defn rollback []
-  (let [config (-> (config/config-harmony-api :dev) config/migrations-conf)]
-    (migrations/run-migratus-cmd config ["rollback"])))
+  (migrations/run-migratus-cmd (dev-config) ["rollback"]))
 
 (defn create-migration [name]
-  (let [config (-> (config/config-harmony-api :dev) config/migrations-conf)]
-    (migrations/run-migratus-cmd config ["create" name])))
+  (migrations/run-migratus-cmd (dev-config) ["create" name]))
 
 (comment
   ;; You can write your own temporary test code here but do not commit
