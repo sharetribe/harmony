@@ -134,6 +134,18 @@ convox rack logs --filter 'build' --rack <environment>
   convox rack
   ```
 
+  If you need to change the rack, you can first list available racks:
+  
+  ```bash
+  convox racks
+  ```
+  
+  ...and then switch the rack
+  
+  ```bash
+  convox switch <rack name (without sharetribe/ prefix)>
+  ```
+
 1. Deploy:
 
   ```
