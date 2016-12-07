@@ -120,6 +120,12 @@ each test using the Migratus migrations (resources/migrations/).
 @Sharebot deploy harmony-api/master to production
 ```
 
+To follow the progress real-time:
+
+```
+convox rack logs --filter 'build' --rack <environment>
+```
+
 ## Deploying with Convox
 
 1. Make sure you're using the right Convox rack:
