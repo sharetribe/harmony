@@ -148,6 +148,14 @@ convox rack logs --filter 'build' --rack <environment>
 
 1. Deploy:
 
+  To list all available apps:
+  
+  ```
+  convox apps
+  ```
+  
+  Deploy:
+
   ```
   convox deploy -f docker-compose.harmony-api.yml -a <app name> --wait
   ```
