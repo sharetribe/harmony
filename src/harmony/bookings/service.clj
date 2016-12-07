@@ -3,6 +3,7 @@
             [clj-time.periodic :as periodic]
             [clj-time.coerce :as coerce]
             [harmony.util.time :as time]
+            [harmony.util.data :refer [map-values]]
             [harmony.bookings.db :as db]))
 
 (defn- bookable-defaults [m-id ref-id author-id]
@@ -125,3 +126,32 @@
       (db/modify-booking-status db {:id booking-id :status :rejected})
       (db/fetch-booking db {:id booking-id}))))
 
+(defn- block-defaults [block marketplace-id bookable-id]
+  (let [{:keys [id start end]} block]
+    {:id id
+     :marketplaceId marketplace-id
+     :bookableId bookable-id
+     :seatsOveride nil
+     :start (time/midnight-date start)
+     :end (time/midnight-date end)}))
+
+(defn create-blocks [db cmd]
+  (let [{:keys [marketplaceId refId blocks]} cmd
+        {bookable-id :id} (db/fetch-bookable
+                           db
+                           {:marketplaceId marketplaceId :refId refId}
+                           {:cols :id})]
+    (when bookable-id
+      (let [block-ids (db/create-blocks db (map #(block-defaults % marketplaceId bookable-id) blocks))]
+        (db/fetch-blocks-by-ids db {:ids block-ids :bookableId bookable-id})))))
+
+(defn delete-blocks [db cmd]
+  (let [{:keys [marketplaceId refId blocks]} cmd
+        {bookable-id :id} (db/fetch-bookable
+                           db
+                           {:marketplaceId marketplaceId :refId refId}
+                           {:cols :id})]
+    (when bookable-id
+      (let [deleted-blocks (db/fetch-blocks-by-ids db {:ids (map :id blocks) :bookableId bookable-id})]
+        (db/remove-blocks db deleted-blocks)
+        deleted-blocks))))

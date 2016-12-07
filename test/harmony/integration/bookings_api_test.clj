@@ -7,7 +7,7 @@
             [harmony.integration.db-test-util :as db-test-util]
             [harmony.config :as config]
             [harmony.system :as system]
-            [harmony.bookings.db :as bookings-db]))
+            [harmony.bookings.service :as bookings]))
 
 (def fixed-uuid
   (let [ids-holder (atom {})]
@@ -31,15 +31,6 @@
      (constantly (system/harmony-api conf))))
 
   (alter-var-root #'test-system component/start))
-
-(defn- create-block [block]
-  ;; TODO Remove me!
-  ;; I'm just a helper method to add blocks while we don't have endpoint
-  ;; for that.
-  ;;
-  ;; Implement updateAvailability and remove me
-  (let [db (:db-conn-pool test-system)]
-    (bookings-db/create-block db block)))
 
 (use-fixtures :each (fn [f]
                       (setup)
@@ -227,7 +218,6 @@
                               {:marketplaceId (fixed-uuid :marketplaceId)
                                :refId (fixed-uuid :refId)
                                :authorId (fixed-uuid :authorId)})
-        bookable-id (get-in bookable-res [:body :data :id])
         _ (do-post "/bookings/initiate"
                    {}
                    {:marketplaceId (fixed-uuid :marketplaceId)
@@ -252,19 +242,31 @@
                     :initialStatus :rejected
                     :start #inst "2016-09-25T00:00:00.000Z"
                     :end #inst "2016-09-26T00:00:00.000Z"})
-        _ (doseq [[start end] [[#inst "2016-09-20T00:00:00.000Z" #inst "2016-09-21T00:00:00.000Z"]
-                               [#inst "2016-09-22T00:00:00.000Z" #inst "2016-09-23T00:00:00.000Z"]
-                               [#inst "2016-08-28T00:00:00.000Z" #inst "2016-08-29T00:00:00.000Z"]]]
-            (create-block {:marketplaceId (fixed-uuid :marketplaceId)
-                           :bookableId bookable-id
-                           :start start
-                           :end end}))
-        {:keys [status body]} (do-get "/timeslots/query"
+        create-blocks-res (do-post "/bookables/createBlocks"
+                                   nil
                                    {:marketplaceId (fixed-uuid :marketplaceId)
                                     :refId (fixed-uuid :refId)
-                                    :start "2016-09-19T00:00:00.000Z"
-                                    :end "2016-09-26T00:00:00.000Z"})
-        free-timeslots (map timeslot [#inst "2016-09-21T00:00:00.000Z"
+                                    :blocks [{:start #inst "2016-09-20T00:00:00.000Z"
+                                              :end #inst "2016-09-21T00:00:00.000Z"}
+                                             {:start #inst "2016-09-22T00:00:00.000Z"
+                                              :end #inst "2016-09-23T00:00:00.000Z"}
+                                             {:start #inst "2016-08-28T00:00:00.000Z"
+                                              :end #inst "2016-08-29T00:00:00.000Z"}]})
+        created-block-ids (map :id (get-in create-blocks-res [:body :data]))
+
+        ;; Test also that deleted blocks don't affect on timeslot calculations
+        delete-res (do-post "/bookables/deleteBlocks"
+                            nil
+                            {:marketplaceId (fixed-uuid :marketplaceId)
+                             :refId (fixed-uuid :refId)
+                             :blocks [{:id (first created-block-ids)}]})
+        {:keys [status body]} (do-get "/timeslots/query"
+                                      {:marketplaceId (fixed-uuid :marketplaceId)
+                                       :refId (fixed-uuid :refId)
+                                       :start "2016-09-19T00:00:00.000Z"
+                                       :end "2016-09-26T00:00:00.000Z"})
+        free-timeslots (map timeslot [#inst "2016-09-20T00:00:00.000Z"
+                                      #inst "2016-09-21T00:00:00.000Z"
                                       #inst "2016-09-25T00:00:00.000Z"])
         actual   (map #(select-keys (:attributes %) [:refId :unitType :seats :start :end]) (:data body))
         expected (map #(merge % {:refId (fixed-uuid :refId)
@@ -282,7 +284,6 @@
                               {:marketplaceId (fixed-uuid :marketplaceId)
                                :refId (fixed-uuid :refId)
                                :authorId (fixed-uuid :authorId)})
-        bookable-id (get-in bookable-res [:body :data :id])
         _ (doseq [[start end] [[#inst "2016-09-19T00:00:00.000Z" #inst "2016-09-20T00:00:00.000Z"]
                                [#inst "2016-09-22T00:00:00.000Z" #inst "2016-09-24T00:00:00.000Z"]
                                [#inst "2016-08-22T00:00:00.000Z" #inst "2016-08-24T00:00:00.000Z"]]]
@@ -294,13 +295,16 @@
                       :initialStatus :paid
                       :start start
                       :end end}))
-        _ (doseq [[start end] [[#inst "2016-09-17T00:00:00.000Z" #inst "2016-09-18T00:00:00.000Z"]
-                               [#inst "2016-09-21T00:00:00.000Z" #inst "2016-09-22T00:00:00.000Z"]
-                               [#inst "2016-08-22T00:00:00.000Z" #inst "2016-08-24T00:00:00.000Z"]]]
-            (create-block {:marketplaceId (fixed-uuid :marketplaceId)
-                           :bookableId bookable-id
-                           :start start
-                           :end end}))
+        _ (do-post "/bookables/createBlocks"
+                   nil
+                   {:marketplaceId (fixed-uuid :marketplaceId)
+                    :refId (fixed-uuid :refId)
+                    :blocks [{:start #inst "2016-09-17T00:00:00.000Z"
+                              :end #inst "2016-09-18T00:00:00.000Z"}
+                             {:start #inst "2016-09-21T00:00:00.000Z"
+                              :end #inst "2016-09-22T00:00:00.000Z"}
+                             {:start #inst "2016-08-22T00:00:00.000Z"
+                              :end #inst "2016-08-24T00:00:00.000Z"}]})
         {:keys [status body] :as res} (do-get "/bookables/show"
                                               {:marketplaceId (fixed-uuid :marketplaceId)
                                                :refId (fixed-uuid :refId)
