@@ -53,6 +53,29 @@
                :accept :transit+msgpack
                :throw-exceptions false}))
 
+(defmulti post-item first)
+
+(defmethod post-item :bookable
+  [[_ data]]
+  (do-post "/bookables/create" {} data))
+
+(defmethod post-item :booking
+  [[_ data]]
+  (do-post "/bookings/initiate" {} data))
+
+(defmethod post-item :blocks
+  [[_ data]]
+  (do-post "/bookables/createBlocks" {} data))
+
+(defn- setup-test-data
+  [test-data]
+  (doseq [d test-data]
+    (let [{:keys [status body]} (post-item d)]
+      (when (> status 299)
+        (throw (ex-info "Failed to setup test data" {:data-item d
+                                                     :resp-status status
+                                                     :resp-body body}))))))
+
 (defn- plus [date plus-days]
   (c/to-date (t/plus (c/from-date date) (t/days plus-days))))
 
@@ -90,12 +113,10 @@
 
 
 (deftest initiate-booking
-  (let [_ (do-post "/bookables/create"
-                   {}
-                   {:marketplaceId (fixed-uuid :marketplaceId)
-                    :refId (fixed-uuid :refId)
-                    :authorId (fixed-uuid :authorId)})
-        {:keys [status body]} (do-post "/bookings/initiate"
+  (setup-test-data [[:bookable {:marketplaceId (fixed-uuid :marketplaceId)
+                                :refId (fixed-uuid :refId)
+                                :authorId (fixed-uuid :authorId)}]])
+  (let [{:keys [status body]} (do-post "/bookings/initiate"
                                        {}
                                        {:marketplaceId (fixed-uuid :marketplaceId)
                                         :customerId (fixed-uuid :customerId)
@@ -114,12 +135,10 @@
            (select-keys (get-in body [:data :attributes]) [:customerId :status :seats :start :end])))))
 
 (deftest accept-booking
-  (let [_ (do-post "/bookables/create"
-                   {}
-                   {:marketplaceId (fixed-uuid :marketplaceId)
-                    :refId (fixed-uuid :refId)
-                    :authorId (fixed-uuid :authorId)})
-        initiate-res (do-post "/bookings/initiate"
+  (setup-test-data [[:bookable {:marketplaceId (fixed-uuid :marketplaceId)
+                                :refId (fixed-uuid :refId)
+                                :authorId (fixed-uuid :authorId)}]])
+  (let [initiate-res (do-post "/bookings/initiate"
                               {}
                               {:marketplaceId (fixed-uuid :marketplaceId)
                                :customerId (fixed-uuid :customerId)
@@ -137,37 +156,33 @@
     (is (= :accepted (get-in body [:data :attributes :status])))))
 
 (deftest attempt-doublebooking
-  (let [_ (do-post "/bookables/create"
-                   {}
-                   {:marketplaceId (fixed-uuid :marketplaceId)
-                    :refId (fixed-uuid :refId)
-                    :authorId (fixed-uuid :authorId)})
-        first (do-post "/bookings/initiate"
-                   {}
-                   {:marketplaceId (fixed-uuid :marketplaceId)
-                    :customerId (fixed-uuid :customerId)
-                    :refId (fixed-uuid :refId)
-                    :initialStatus :paid
-                    :start #inst "2016-09-19T00:00:00.000Z"
-                    :end #inst "2016-09-20T00:00:00.000Z"})
+  (setup-test-data [[:bookable {:marketplaceId (fixed-uuid :marketplaceId)
+                                :refId (fixed-uuid :refId)
+                                :authorId (fixed-uuid :authorId)}]])
+  (let [first (do-post "/bookings/initiate"
+                       {}
+                       {:marketplaceId (fixed-uuid :marketplaceId)
+                        :customerId (fixed-uuid :customerId)
+                        :refId (fixed-uuid :refId)
+                        :initialStatus :paid
+                        :start #inst "2016-09-19T00:00:00.000Z"
+                        :end #inst "2016-09-20T00:00:00.000Z"})
         double (do-post "/bookings/initiate"
-                     {}
-                     {:marketplaceId (fixed-uuid :marketplaceId)
-                      :customerId (fixed-uuid :customerId)
-                      :refId (fixed-uuid :refId)
-                      :initialStatus :paid
-                      :start #inst "2016-09-19T00:00:00.000Z"
-                      :end #inst "2016-09-20T00:00:00.000Z"})]
+                        {}
+                        {:marketplaceId (fixed-uuid :marketplaceId)
+                         :customerId (fixed-uuid :customerId)
+                         :refId (fixed-uuid :refId)
+                         :initialStatus :paid
+                         :start #inst "2016-09-19T00:00:00.000Z"
+                         :end #inst "2016-09-20T00:00:00.000Z"})]
     (is (= 201 (:status first)))
     (is (= 409 (:status double)))))
 
 (deftest reject-booking
-  (let [_ (do-post "/bookables/create"
-                   {}
-                   {:marketplaceId (fixed-uuid :marketplaceId)
-                    :refId (fixed-uuid :refId)
-                    :authorId (fixed-uuid :authorId)})
-        initiate-res (do-post "/bookings/initiate"
+  (setup-test-data [[:bookable {:marketplaceId (fixed-uuid :marketplaceId)
+                                :refId (fixed-uuid :refId)
+                                :authorId (fixed-uuid :authorId)}]])
+  (let [initiate-res (do-post "/bookings/initiate"
                               {}
                               {:marketplaceId (fixed-uuid :marketplaceId)
                                :customerId (fixed-uuid :customerId)
@@ -185,12 +200,10 @@
     (is (= :rejected (get-in body [:data :attributes :status])))))
 
 (deftest query-timeslots
-  (let [_ (do-post "/bookables/create"
-                   {}
-                   {:marketplaceId (fixed-uuid :marketplaceId)
-                    :refId (fixed-uuid :refId)
-                    :authorId (fixed-uuid :authorId)})
-        {:keys [status body]} (do-get "/timeslots/query"
+  (setup-test-data [[:bookable {:marketplaceId (fixed-uuid :marketplaceId)
+                                :refId (fixed-uuid :refId)
+                                :authorId (fixed-uuid :authorId)}]])
+  (let [{:keys [status body]} (do-get "/timeslots/query"
                                    {:marketplaceId (fixed-uuid :marketplaceId)
                                     :refId (fixed-uuid :refId)
                                     :start "2016-09-19T00:00:00.000Z"
@@ -213,36 +226,28 @@
     (is (= expected actual))))
 
 (deftest query-reserved-timeslots
-  (let [bookable-res (do-post "/bookables/create"
-                              {}
-                              {:marketplaceId (fixed-uuid :marketplaceId)
+  (setup-test-data [[:bookable {:marketplaceId (fixed-uuid :marketplaceId)
+                                :refId (fixed-uuid :refId)
+                                :authorId (fixed-uuid :authorId)}]
+                    [:booking {:marketplaceId (fixed-uuid :marketplaceId)
+                               :customerId (fixed-uuid :customerId)
                                :refId (fixed-uuid :refId)
-                               :authorId (fixed-uuid :authorId)})
-        _ (do-post "/bookings/initiate"
-                   {}
-                   {:marketplaceId (fixed-uuid :marketplaceId)
-                    :customerId (fixed-uuid :customerId)
-                    :refId (fixed-uuid :refId)
-                    :initialStatus :paid
-                    :start #inst "2016-09-19T00:00:00.000Z"
-                    :end #inst "2016-09-20T00:00:00.000Z"})
-        _ (do-post "/bookings/initiate"
-                   {}
-                   {:marketplaceId (fixed-uuid :marketplaceId)
-                    :customerId (fixed-uuid :customerId)
-                    :refId (fixed-uuid :refId)
-                    :initialStatus :accepted
-                    :start #inst "2016-09-23T00:00:00.000Z"
-                    :end #inst "2016-09-25T00:00:00.000Z"})
-        _ (do-post "/bookings/initiate"
-                   {}
-                   {:marketplaceId (fixed-uuid :marketplaceId)
-                    :customerId (fixed-uuid :customerId)
-                    :refId (fixed-uuid :refId)
-                    :initialStatus :rejected
-                    :start #inst "2016-09-25T00:00:00.000Z"
-                    :end #inst "2016-09-26T00:00:00.000Z"})
-        create-blocks-res (do-post "/bookables/createBlocks"
+                               :initialStatus :paid
+                               :start #inst "2016-09-19T00:00:00.000Z"
+                               :end #inst "2016-09-20T00:00:00.000Z"}]
+                    [:booking {:marketplaceId (fixed-uuid :marketplaceId)
+                               :customerId (fixed-uuid :customerId)
+                               :refId (fixed-uuid :refId)
+                               :initialStatus :accepted
+                               :start #inst "2016-09-23T00:00:00.000Z"
+                               :end #inst "2016-09-25T00:00:00.000Z"}]
+                    [:booking {:marketplaceId (fixed-uuid :marketplaceId)
+                               :customerId (fixed-uuid :customerId)
+                               :refId (fixed-uuid :refId)
+                               :initialStatus :rejected
+                               :start #inst "2016-09-25T00:00:00.000Z"
+                               :end #inst "2016-09-26T00:00:00.000Z"}]])
+  (let [create-blocks-res (do-post "/bookables/createBlocks"
                                    nil
                                    {:marketplaceId (fixed-uuid :marketplaceId)
                                     :refId (fixed-uuid :refId)
@@ -279,33 +284,29 @@
 
 
 (deftest show-bookable
-  (let [bookable-res (do-post "/bookables/create"
-                              {}
-                              {:marketplaceId (fixed-uuid :marketplaceId)
+  (setup-test-data (concat
+                    [[:bookable {:marketplaceId (fixed-uuid :marketplaceId)
+                                 :refId (fixed-uuid :refId)
+                                 :authorId (fixed-uuid :authorId)}]]
+                    (map (fn [[start end]]
+                           [:booking {:marketplaceId (fixed-uuid :marketplaceId)
+                                      :customerId (fixed-uuid :customerId)
+                                      :refId (fixed-uuid :refId)
+                                      :initialStatus :paid
+                                      :start start
+                                      :end end}])
+                            [[#inst "2016-09-19T00:00:00.000Z" #inst "2016-09-20T00:00:00.000Z"]
+                             [#inst "2016-09-22T00:00:00.000Z" #inst "2016-09-24T00:00:00.000Z"]
+                             [#inst "2016-08-22T00:00:00.000Z" #inst "2016-08-24T00:00:00.000Z"]])
+                    [[:blocks {:marketplaceId (fixed-uuid :marketplaceId)
                                :refId (fixed-uuid :refId)
-                               :authorId (fixed-uuid :authorId)})
-        _ (doseq [[start end] [[#inst "2016-09-19T00:00:00.000Z" #inst "2016-09-20T00:00:00.000Z"]
-                               [#inst "2016-09-22T00:00:00.000Z" #inst "2016-09-24T00:00:00.000Z"]
-                               [#inst "2016-08-22T00:00:00.000Z" #inst "2016-08-24T00:00:00.000Z"]]]
-            (do-post "/bookings/initiate"
-                     {}
-                     {:marketplaceId (fixed-uuid :marketplaceId)
-                      :customerId (fixed-uuid :customerId)
-                      :refId (fixed-uuid :refId)
-                      :initialStatus :paid
-                      :start start
-                      :end end}))
-        _ (do-post "/bookables/createBlocks"
-                   nil
-                   {:marketplaceId (fixed-uuid :marketplaceId)
-                    :refId (fixed-uuid :refId)
-                    :blocks [{:start #inst "2016-09-17T00:00:00.000Z"
-                              :end #inst "2016-09-18T00:00:00.000Z"}
-                             {:start #inst "2016-09-21T00:00:00.000Z"
-                              :end #inst "2016-09-22T00:00:00.000Z"}
-                             {:start #inst "2016-08-22T00:00:00.000Z"
-                              :end #inst "2016-08-24T00:00:00.000Z"}]})
-        {:keys [status body] :as res} (do-get "/bookables/show"
+                               :blocks [{:start #inst "2016-09-17T00:00:00.000Z"
+                                         :end #inst "2016-09-18T00:00:00.000Z"}
+                                        {:start #inst "2016-09-21T00:00:00.000Z"
+                                         :end #inst "2016-09-22T00:00:00.000Z"}
+                                        {:start #inst "2016-08-22T00:00:00.000Z"
+                                         :end #inst "2016-08-24T00:00:00.000Z"}]}]]))
+  (let [{:keys [status body] :as res} (do-get "/bookables/show"
                                               {:marketplaceId (fixed-uuid :marketplaceId)
                                                :refId (fixed-uuid :refId)
                                                :include "bookings,blocks"
