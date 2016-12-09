@@ -143,7 +143,9 @@
                            {:cols :id})]
     (when bookable-id
       (let [block-ids (db/create-blocks db (map #(block-defaults % marketplaceId bookable-id) blocks))]
-        (db/fetch-blocks-by-ids db {:ids block-ids :bookableId bookable-id})))))
+        (if (seq block-ids)
+          (db/fetch-blocks-by-ids db {:ids block-ids :bookableId bookable-id})
+          [])))))
 
 (defn delete-blocks [db cmd]
   (let [{:keys [marketplaceId refId blocks]} cmd

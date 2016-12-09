@@ -109,9 +109,10 @@
              {:exception throwable})
   throwable)
 
-;; Generate a set of random bookings for September 2016. Serially
-;; attempt to apply all the generated bookings and validate that no
-;; day has two bookings on it.
+;; Generate a set of random bookings and blocks for September
+;; 2016. Serially attempt to apply all the generated items and
+;; validate that no day has two bookings or a block and a booking on
+;; it.
 (deftest no-double-bookings-serial
   (checking "Bookings and/or block cannot overlap" (chuck/times 5)
     [proposed-items (gen/no-shrink ; No shrinking because side-effects make it too slow.
@@ -138,10 +139,11 @@
 
     (teardown)))
 
-;; Generate a set of random bookings for September 2016. Spin up
-;; multiple threads. Divide the generated bookings to thread and have
-;; each of them try to apply the bookings. Validate that no day has
-;; two bookings on it and no exceptions were thrown in the process.
+;; Generate a set of random bookings and blocks for September
+;; 2016. Spin up multiple threads. Divide the generated items to
+;; threads and have each of them try to apply them. Validate that no
+;; day has two bookings or a block and a booking on it and no
+;; exceptions were thrown in the process.
 (deftest no-double-bookings-parallel
   (checking "Bookings and/or blocks cannot overlap in race conditions" (chuck/times 5)
     [proposed-items (gen/no-shrink ; No shrinking because side-effects make it too slow.
@@ -180,5 +182,19 @@
     (teardown)))
 
 (comment
+  (def s (last (gen/sample (gen/vector
+                            (gen/one-of [(gen/fmap to-booking-params gen-booking-dates)
+                                         (gen/fmap to-block-params gen-block-dates)])
+                            3 100)
+                           10)))
 
+  (setup)
+  (setup-bookable (:db-conn-pool test-system))
+  (def done (reduce
+             (fn [r i]
+               (conj r (create-item (:db-conn-pool test-system) i)))
+             []
+             s))
+  (teardown)
   )
+
