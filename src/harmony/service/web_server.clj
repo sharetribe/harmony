@@ -48,8 +48,8 @@
                                  errors-client))
 
             server (-> service-map
-                       (server/create-server)
-                       server/start)]
+                       (server/create-server))]
+        (server/start server)
         (log/info :web-server :started {:port port :dev-mode? dev-mode?})
         (assoc component :server server))))
 
