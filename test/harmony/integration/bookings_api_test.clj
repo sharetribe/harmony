@@ -195,6 +195,36 @@
      (is (= 201 (:status first)))
      (is (= 409 (:status double))))))
 
+(deftest attempt-blocked-booking
+  (system-test
+   (setup-test-data [[:bookable {:marketplaceId (fixed-uuid :marketplaceId)
+                                 :refId (fixed-uuid :refId)
+                                 :authorId (fixed-uuid :authorId)}]
+                     [:blocks {:marketplaceId (fixed-uuid :marketplaceId)
+                               :refId (fixed-uuid :refId)
+                               :blocks [{:start #inst "2016-09-20T00:00:00.000Z"
+                                         :end #inst "2016-09-21T00:00:00.000Z"}
+                                        {:start #inst "2016-09-22T00:00:00.000Z"
+                                         :end #inst "2016-09-23T00:00:00.000Z"}]}]])
+   (let [blocked (do-post "/bookings/initiate"
+                        {}
+                        {:marketplaceId (fixed-uuid :marketplaceId)
+                         :customerId (fixed-uuid :customerId)
+                         :refId (fixed-uuid :refId)
+                         :initialStatus :paid
+                         :start #inst "2016-09-20T00:00:00.000Z"
+                         :end #inst "2016-09-22T00:00:00.000Z"})
+         adjacent (do-post "/bookings/initiate"
+                         {}
+                         {:marketplaceId (fixed-uuid :marketplaceId)
+                          :customerId (fixed-uuid :customerId)
+                          :refId (fixed-uuid :refId)
+                          :initialStatus :paid
+                          :start #inst "2016-09-19T00:00:00.000Z"
+                          :end #inst "2016-09-20T00:00:00.000Z"})]
+     (is (= 409 (:status blocked)))
+     (is (= 201 (:status adjacent))))))
+
 (deftest reject-booking
   (system-test
    (setup-test-data [[:bookable {:marketplaceId (fixed-uuid :marketplaceId)
