@@ -2,6 +2,7 @@
   (:require [hugsql.core :as hugsql]
             [clj-uuid :as uuid]
             [clojure.java.jdbc :as jdbc]
+            [harmony.util.time :as time]
             [harmony.util.db :refer [format-result
                                      format-insert-data
                                      format-params
@@ -26,15 +27,23 @@
                       :start start
                       :end end
                       :statuses #{:initial :paid :accepted}}
-                     {:cols #{:id}})]
+                     {:cols #{:id}})
+        exceptions-qp (format-params
+                       {:bookableId bookableId
+                        :start start
+                        :end end
+                        :type :block}
+                       {:cols #{:id}})]
     (jdbc/with-db-transaction [tx db {:isolation :repeatable-read}]
       (let [bookable-exists? (select-for-update-bookable-by-id
                               tx
                               (format-params {:id bookableId} {:cols #{:id}}))
-            slot-free? (-> (select-bookings-by-bookable-start-end-status
-                            tx
-                            bookings-qp)
-                           empty?)]
+            slot-free? (and (empty? (select-bookings-by-bookable-start-end-status
+                                     tx
+                                     bookings-qp))
+                            (empty? (select-exceptions-by-bookable-start-end-type
+                                     tx
+                                     exceptions-qp)))]
         (if (and bookable-exists? slot-free?)
           (do (insert-booking tx (format-insert-data
                                   (assoc booking :id booking-id)))
@@ -142,18 +151,43 @@
     ids))
 
 (defn create-blocks
-  "Create a new block"
+  "Create a set of new blocks. Return the ids of the blocks that were
+  actually created."
   ([db blocks]
-   (let [b-with-ids (map #(assoc % :id (uuid/v1) :type :block :seatsOverride nil) blocks)]
-     (insert-exceptions db {:exceptions (tuple-list (map format-insert-data b-with-ids)
-                                                    [:id
-                                                     :type
-                                                     :marketplaceId
-                                                     :bookableId
-                                                     :seatsOverride
-                                                     :start
-                                                     :end])})
-     (map :id b-with-ids))))
+   (when (seq blocks)
+     (let [bookable-id (:bookableId (first blocks))
+           start-min (->> blocks (map :start) time/min-date)
+           end-max (->> blocks (map :end) time/max-date)
+           b-qp (format-params {:bookableId bookable-id
+                                :start start-min
+                                :end end-max
+                                :statuses #{:initial :paid :accepted}}
+                               {:cols #{:start :end}})
+           e-qp (format-params {:bookableId bookable-id
+                                :start start-min
+                                :end end-max
+                                :type :block}
+                               {:cols #{:start :end}})
+           b-with-ids (map
+                       #(assoc % :id (uuid/v1) :type :block :seatsOverride nil)
+                       blocks)]
+       (jdbc/with-db-transaction [tx db {:isolation :repeatable-read}]
+         (let [bookable-exists? (select-for-update-bookable-by-id
+                                 tx
+                                 (format-params {:id bookable-id} {:cols #{:id}}))
+               reserved (concat
+                         (select-bookings-by-bookable-start-end-status tx b-qp)
+                         (select-exceptions-by-bookable-start-end-type tx e-qp))
+               free-dates (time/free-dates start-min end-max reserved)
+               new-blocks (filter #(time/free-period? % (set free-dates))
+                                  b-with-ids)]
+           (if (and bookable-exists? (seq new-blocks))
+             (do (insert-exceptions db {:exceptions
+                                        (tuple-list
+                                         (map format-insert-data new-blocks)
+                                         [:id :type :marketplaceId :bookableId :seatsOverride :start :end])})
+                 (map :id new-blocks))
+             nil)))))))
 
 (defn fetch-bookable-with-plan
   "Fetch the bookable by marketplace id and reference id + the
