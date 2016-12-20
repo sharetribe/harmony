@@ -133,22 +133,27 @@
 (defn fetch-blocks-by-ids
   ([db query-params] (fetch-blocks-by-ids db query-params {}))
   ([db {:keys [ids bookableId]} {:keys [cols]}]
-   (let [qp (format-params
-             {:ids ids :bookableId bookableId}
-             {:cols cols :default-cols #{:id
-                                         :marketplaceId
-                                         :bookableId
-                                         :start
-                                         :end}})
+   (if (seq ids)
+     (let [qp (format-params
+               {:ids ids :bookableId bookableId}
+               {:cols cols :default-cols #{:id
+                                           :marketplaceId
+                                           :bookableId
+                                           :start
+                                           :end}})
 
-         blocks (select-exceptions-by-ids-bookable db qp)]
-     (map #(format-result % {:as-keywords #{:type}}) blocks))))
+           blocks (select-exceptions-by-ids-bookable db qp)]
+       (map #(format-result % {:as-keywords #{:type}}) blocks))
+     [])))
 
 (defn remove-blocks [db blocks]
   "Remove block"
   (let [ids (map :id blocks)]
-    (update-exceptions-deleted-by-ids db (format-params {:deleted true :ids ids}))
-    ids))
+    (if (seq ids)
+      (do
+        (update-exceptions-deleted-by-ids db (format-params {:deleted true :ids ids}))
+        ids)
+      [])))
 
 (defn create-blocks
   "Create a set of new blocks. Return the ids of the blocks that were
