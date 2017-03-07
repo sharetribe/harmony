@@ -2,12 +2,16 @@
 
 [![CircleCI](https://circleci.com/gh/sharetribe/harmony/tree/master.svg?style=svg&circle-token=043fa482e17e0b7a80641714c91b41a6bc0d3a40)](https://circleci.com/gh/sharetribe/harmony/tree/master)
 
-The Sharetribe Harmony backend for marketplace transaction functionalities.
+Availability management backend and API for Sharetribe marketplaces.
+
+For more information about Sharetribe marketplaces and the core marketplace functionalities, see the [main Sharetribe repository](https://www.github.com/sharetribe/sharetribe).
+
+Would you like to set up your marketplace in one minute without touching code? Head to [Sharetribe.com](https://www.sharetribe.com).
 
 ## Requirements
 
 * MySQL 5.7
-* This component is designed to be deployed to AWS using Docker and Convox but AWS is not a hard requirement.
+* This component is designed to be deployed to [Amazon Web Services (AWS)](https://aws.amazon.com/) using [Docker](https://www.docker.com/) and [Convox](https://convox.com/) but AWS is not a hard requirement.
 
 ## Starting a dockerized environment on localhost
 
