@@ -69,15 +69,33 @@ other services that will rely on and integrate to the Harmony API.
 
   To stop the service, use either `Ctrl+C` or `docker-compose down`
 
-### Rebuilding new code:
+### Upgrading to latest version
 
-Exit the running container.
+  1. Exit the running container.
 
-```
-git pull
-docker-compose build
-docker-compose up
-```
+  ```
+  docker-compose down
+  ```
+
+  1. Pull the newest code and checkout the latest version
+
+  ```
+  git pull
+  git checkout latest
+  ```
+
+  1. Rebuild and restart the service
+
+  ```
+  docker-compose build
+  docker-compose up
+  ```
+
+  1. Run migrations
+
+  ```
+  DB_PORT=13306 lein migrate migrate
+  ```
 
 ### Cleaning old docker containers:
 
@@ -91,33 +109,41 @@ docker-compose rm -v
 ## Development
 
 When developing Harmony it often easier to run the service outside
-Docker. In this case, you can still use docker to run the database. In
+Docker. In this case, you can still use Docker to run the database. In
 the development configuration everything is already setup to connect
-to the exposed port of 13306 using the correct root user
+to the exposed port of `13306` using the correct root user
 password. Just run `docker-compose up db`, navigate to user-namespace
 in your favourite REPL client and run `(reset)`.
 
+### Database clean up
+
 The database service data volume is mounted in the host OS to
-~/.sharetribe/harmony-mysql-data/. This means that the database
+`~/.sharetribe/harmony-mysql-data/`. This means that the database
 contents are persisted even across removing and rebuilding the MySQL
 db container. To completely clean up your development database just
-delete the aforementioned directory in your home directory.
+delete the aforementioned directory in your home directory:
+
+  ```
+  rm -r  ~/.sharetribe/harmony-mysql-data/
+  ```
+
+### Architecture and coding conventions
 
 Check the conventions for code style and architure: [conventions and structure](doc/conventions_and_structure.md).
 
 ## Testing
 
-Integrations tests (test/harmony/integration/) run against a live
+Integrations tests (`test/harmony/integration/`) run against a live
 MySQL database and a live web server. By default, the web server is
-setup to run at localhost:8086. It assumes this port is available for
+setup to run at `localhost:8086`. It assumes this port is available for
 binding.
 
 The default configuration also assumes a MySQL server running at
-127.0.0.1:13306 (the setup provided in docker-compose
+`127.0.0.1:13306` (the setup provided in `docker-compose`
 configuration). To run the integration tests locally you need to have
 the docker container for db running. By default, the tests use
-harmony_test_db database. The contents of this DB are refreshed after
-each test using the Migratus migrations (resources/migrations/).
+`harmony_test_db` database. The contents of this DB are refreshed after
+each test using the Migratus migrations (`resources/migrations/`).
 
 ## Deploying with ChatOps
 
@@ -184,4 +210,3 @@ convox rack logs --filter 'build' --rack <environment>
 Copyright © 2016 [Sharetribe Ltd](https://www.sharetribe.com).
 
 Distributed under [The Apache License, Version 2.0](http://www.apache.org/licenses/LICENSE-2.0)
-
