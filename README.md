@@ -11,7 +11,6 @@ Would you like to set up your marketplace in one minute without touching code? H
 ### Contents
 
 - [Installation](#installation)
-- [Upgrade](#upgrade)
 - [Changelog](#changelog)
 - [Development](#development)
 - [Testing](#testing)
@@ -80,9 +79,7 @@ other services that will rely on and integrate to the Harmony API.
 
   To stop the service, use either `Ctrl+C` or `docker-compose down`
 
-## Upgrade
-
-For production use we recommend you to upgrade only when new version is released and **not** to follow the master branch.
+### Rebuild new code
 
 1. Exit the running container.
 
@@ -109,6 +106,9 @@ For production use we recommend you to upgrade only when new version is released
   ```
   DB_PORT=13306 lein migrate migrate
   ```
+
+For production use we recommend you to upgrade only when new version is released and **not** to follow the master branch.
+
 
 ### Cleaning old docker containers:
 
