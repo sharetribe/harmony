@@ -8,6 +8,14 @@ For more information about Sharetribe marketplaces and the core marketplace func
 
 Would you like to set up your marketplace in one minute without touching code? Head to [Sharetribe.com](https://www.sharetribe.com).
 
+### Contents
+
+- [Installation](#installation)
+- [Development](#development)
+- [Testing](#testing)
+- [Deploying](#deploying)
+- [License](#license)
+
 ## Installation
 
 ### Requirements
@@ -145,7 +153,7 @@ the docker container for db running. By default, the tests use
 `harmony_test_db` database. The contents of this DB are refreshed after
 each test using the Migratus migrations (`resources/migrations/`).
 
-## Deploying with Convox
+## Deploying
 
 1. Make sure you're using the right Convox rack:
 
@@ -185,7 +193,7 @@ each test using the Migratus migrations (`resources/migrations/`).
   convox run api lein migrate migrate -a <app name>
   ```
 
-## License and Copyright
+## License
 
 Copyright 2017 [Sharetribe Ltd](https://www.sharetribe.com).
 
