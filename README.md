@@ -8,57 +8,66 @@ For more information about Sharetribe marketplaces and the core marketplace func
 
 Would you like to set up your marketplace in one minute without touching code? Head to [Sharetribe.com](https://www.sharetribe.com).
 
-## Requirements
+## Installation
+
+### Requirements
 
 * MySQL 5.7
 * This component is designed to be deployed to [Amazon Web Services (AWS)](https://aws.amazon.com/) using [Docker](https://www.docker.com/) and [Convox](https://convox.com/) but AWS is not a hard requirement.
 
-## Starting a dockerized environment on localhost
+### Starting a dockerized environment on localhost
 
 This instruction will describe how to set up a local Harmony API on
 localhost on OS X. This is intended for doing development work for
 other services that will rely on and integrate to the Harmony API.
 
-### Install docker, docker-compose
+1. Install `docker` and `docker-compose`
 
-Use latest Docker for Mac: https://docs.docker.com/engine/installation/mac/
+  Use latest Docker for Mac: https://docs.docker.com/engine/installation/mac/
 
-### Clone this repository and start the services
+1. Clone this repository and checkout the latest version
 
-If this is the first time you are setting harmony up and you haven't
-yet created an empty database you must do that as the first step:
+  ```
+  git clone git://github.com/sharetribe/harmony.git
+  cd harmony
+  git checkout latest
+  ```
 
-First, start up just the database service. In the project root:
+1. Create database
 
-```
-docker-compose up db
-```
+  First, start up just the database service. In the project root:
 
-Next, create an empty database and run migrations:
+  ```
+  docker-compose up db
+  ```
 
-```
-echo "CREATE DATABASE IF NOT EXISTS harmony_db;" | mysql -u root -p -h 127.0.0.1 --port 13306
-DB_PORT=13306 lein migrate migrate
-```
+  Next, create an empty database and run migrations:
 
-After the database is set up you can now start the API service:
+  ```
+  echo "CREATE DATABASE IF NOT EXISTS harmony_db;" | mysql -u root -p -h 127.0.0.1 --port 13306
+  DB_PORT=13306 lein migrate migrate
+  ```
 
-```
-docker-compose up api
-```
+1. Start the services
 
-Next time, when the database has been setup you can just run
-docker-compose up to start both services in one go.
+  After the database is set up you can now start the API service:
 
-```
-docker-compose up
-```
+  ```
+  docker-compose up api
+  ```
 
-The Harmony API Swagger UI is available at `http://localhost:8085/apidoc/index.html`.
+  Congratulations! The Harmony API Swagger UI is available at `http://localhost:8085/apidoc/index.html`.
 
-Exiting:
+  Next time, when the database has been setup you can just run
+  `docker-compose up` to start both services in one go.
 
-`Ctrl+C` or `docker-compose down`
+  ```
+  docker-compose up
+  ```
+
+1. Exiting
+
+  To stop the service, use either `Ctrl+C` or `docker-compose down`
 
 ### Rebuilding new code:
 
