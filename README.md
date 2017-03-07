@@ -11,9 +11,12 @@ Would you like to set up your marketplace in one minute without touching code? H
 ### Contents
 
 - [Installation](#installation)
+- [Upgrade](#upgrade)
+- [Changelog](#changelog)
 - [Development](#development)
 - [Testing](#testing)
 - [Deploying](#deploying)
+- [Release](#release)
 - [License](#license)
 
 ## Installation
@@ -77,29 +80,31 @@ other services that will rely on and integrate to the Harmony API.
 
   To stop the service, use either `Ctrl+C` or `docker-compose down`
 
-### Upgrading to latest version
+## Upgrade
 
-  1. Exit the running container.
+For production use we recommend you to upgrade only when new version is released and **not** to follow the master branch.
+
+1. Exit the running container.
 
   ```
   docker-compose down
   ```
 
-  1. Pull the newest code and checkout the latest version
+1. Pull the newest code and checkout the latest version
 
   ```
   git pull
   git checkout latest
   ```
 
-  1. Rebuild and restart the service
+1. Rebuild and restart the service
 
   ```
   docker-compose build
   docker-compose up
   ```
 
-  1. Run migrations
+1. Run migrations
 
   ```
   DB_PORT=13306 lein migrate migrate
@@ -113,6 +118,10 @@ there is a need to remove old exited containers:
 ```
 docker-compose rm -v
 ```
+
+## Changelog
+
+See [CHANGELOG.md](./CHANGELOG.md) for detailed list of changes between releases.
 
 ## Development
 
@@ -192,6 +201,10 @@ each test using the Migratus migrations (`resources/migrations/`).
   ```
   convox run api lein migrate migrate -a <app name>
   ```
+
+## Release
+
+See [RELEASE.md](./RELEASE.md) for information about how to make a new release.
 
 ## License
 
