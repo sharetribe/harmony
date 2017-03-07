@@ -145,26 +145,6 @@ the docker container for db running. By default, the tests use
 `harmony_test_db` database. The contents of this DB are refreshed after
 each test using the Migratus migrations (`resources/migrations/`).
 
-## Deploying with ChatOps
-
-`master` branch to `stating`:
-
-```
-@Sharebot deploy harmony-api/master to staging
-```
-
-`master` branch to `production`:
-
-```
-@Sharebot deploy harmony-api/master to production
-```
-
-To follow the progress real-time:
-
-```
-convox rack logs --filter 'build' --rack <environment>
-```
-
 ## Deploying with Convox
 
 1. Make sure you're using the right Convox rack:
@@ -182,7 +162,7 @@ convox rack logs --filter 'build' --rack <environment>
   ...and then switch the rack
 
   ```bash
-  convox switch <rack name (without sharetribe/ prefix)>
+  convox switch <rack name>
   ```
 
 1. Deploy:
