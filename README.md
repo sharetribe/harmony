@@ -54,9 +54,11 @@ other services that will rely on and integrate to the Harmony API.
   Next, create an empty database and run migrations:
 
   ```
-  echo "CREATE DATABASE IF NOT EXISTS harmony_db;" | mysql -u root -p -h 127.0.0.1 --port 13306
+  echo "CREATE DATABASE IF NOT EXISTS harmony_db_charset_1 CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;" | mysql -u root --password=harmony-root -h 127.0.0.1 --port 13306
   DB_PORT=13306 lein migrate migrate
   ```
+
+  (Please note that using a bare password in command line command is insecure. Consider changing the default password.)
 
 1. Start the services
 
