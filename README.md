@@ -14,6 +14,7 @@ Would you like to set up your marketplace in one minute without touching code? H
 - [Changelog](#changelog)
 - [Development](#development)
 - [Testing](#testing)
+- [Using in production](#using-in-production)
 - [Deploying](#deploying)
 - [Release](#release)
 - [License](#license)
@@ -168,6 +169,12 @@ configuration). To run the integration tests locally you need to have
 the docker container for db running. By default, the tests use
 `harmony_test_db` database. The contents of this DB are refreshed after
 each test using the Migratus migrations (`resources/migrations/`).
+
+## Using in production
+
+For production use, we recommend using [Convox](https://convox.com/) and a proper production-ready database, such as [Amazon RDS](https://aws.amazon.com/rds/). The Harmony Docker container is optimized for development use.
+
+Before going to production, you need to change secret keys and probably some other configurations, e.g. database server, database username and password and authentication tokens. See [./resources/conf/harmony-api.edn](./resources/conf/harmony-api.edn) for more information about all the possible configurations.
 
 ## Deploying
 
