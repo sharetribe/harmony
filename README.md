@@ -55,6 +55,11 @@ other services that will rely on and integrate to the Harmony API.
 
   ```
   echo "CREATE DATABASE IF NOT EXISTS harmony_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;" | mysql -u root --password=harmony-root -h 127.0.0.1 --port 13306
+  ```
+  
+  Then, run migrations:
+
+  ```
   DB_PORT=13306 lein migrate migrate
   ```
 
