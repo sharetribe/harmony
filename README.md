@@ -68,7 +68,7 @@ other services that will rely on and integrate to the Harmony API.
   docker-compose up api
   ```
 
-  Congratulations! The Harmony API Swagger UI is available at `http://localhost:8085/apidoc/index.html`.
+  Congratulations! The Harmony API Swagger UI is available at [http://localhost:8085/apidoc/index.html](http://localhost:8085/apidoc/index.html).
 
   Next time, when the database has been setup you can just run
   `docker-compose up` to start both services in one go.
