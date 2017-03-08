@@ -1,0 +1,7 @@
+# If you're looking for documentation how to make a new release, see RELEASE.md
+
+# This file is a placeholder file and it's empty on purpose.
+
+# The deployment server will add information about the current release
+# to this file so that we can use the release information for better
+# error tracking
