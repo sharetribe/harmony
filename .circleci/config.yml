@@ -1,0 +1,40 @@
+version: 2
+jobs:
+  test:
+    docker:
+      - image: clojure:lein-2.7.1
+        environment:
+          LOG_LEVEL: INFO
+          ES_URI: http://127.0.0.1:9200
+          DB_USER: root
+          DB_PASSWORD: very-secret
+          DB_HOST: 127.0.0.1
+          DB_PORT: 3306
+      - image: mysql:5.7
+        environment:
+          MYSQL_ROOT_PASSWORD=very-secret
+    steps:
+      - checkout
+      - restore_cache:
+          key: m2-cache-{{ checksum "project.clj" }}
+      - run:
+          name: Lein deps
+          command: 'lein deps'
+      - save_cache:
+          key: m2-cache-{{ checksum "project.clj" }}
+          paths:
+            - ~/.m2
+      - run:
+          name: run tests
+          command: lein trampoline test2junit
+          environment:
+            TEST_CHECK_FACTOR: 4
+      - store_artifacts:
+          path: test-results
+      - store_test_results:
+          path: test-results
+workflows:
+  version: 2
+  test:
+    jobs:
+      - test
