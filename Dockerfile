@@ -3,9 +3,14 @@ FROM java:8u102
 MAINTAINER  Sharetribe Ltd. "http://github.com/sharetribe"
 ENV REFRESHED_AT 2016-10-28
 
+# See https://unix.stackexchange.com/questions/508724/failed-to-fetch-jessie-backports-repository#answer-508728
+RUN echo "deb [check-valid-until=no] http://cdn-fastly.deb.debian.org/debian jessie main" > /etc/apt/sources.list.d/jessie.list
+RUN echo "deb [check-valid-until=no] http://archive.debian.org/debian jessie-backports main" > /etc/apt/sources.list.d/jessie-backports.list
+RUN sed -i '/deb http:\/\/deb.debian.org\/debian jessie-updates main/d' /etc/apt/sources.list
+
 # Update the package repository
-RUN apt-get update \
-    && apt-get upgrade -y
+RUN apt-get -o Acquire::Check-Valid-Until=false update
+RUN apt-get upgrade -y
 
 RUN curl https://raw.githubusercontent.com/technomancy/leiningen/stable/bin/lein -o /usr/local/bin/lein \
 	&& chmod 755 /usr/local/bin/lein
