@@ -2,7 +2,7 @@
 
 [![CircleCI](https://circleci.com/gh/sharetribe/harmony/tree/master.svg?style=svg&circle-token=043fa482e17e0b7a80641714c91b41a6bc0d3a40)](https://circleci.com/gh/sharetribe/harmony/tree/master)
 
-**Harmony is DEPRECATED. Latest version of Sharetribe Go implements availability
+**Harmony is DEPRECATED. Sharetribe Go from [v10.0.0](https://github.com/sharetribe/sharetribe/releases/tag/v10.0.0) implements availability
 management natively.**
 
 Availability management backend and API for Sharetribe marketplaces.
