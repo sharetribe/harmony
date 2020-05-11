@@ -2,6 +2,9 @@
 
 [![CircleCI](https://circleci.com/gh/sharetribe/harmony/tree/master.svg?style=svg&circle-token=043fa482e17e0b7a80641714c91b41a6bc0d3a40)](https://circleci.com/gh/sharetribe/harmony/tree/master)
 
+**Harmony is DEPRECATED. Sharetribe Go from [v10.0.0](https://github.com/sharetribe/sharetribe/releases/tag/v10.0.0) implements availability
+management natively.**
+
 Availability management backend and API for Sharetribe marketplaces.
 
 For more information about Sharetribe marketplaces and the core marketplace functionalities, see the [main Sharetribe repository](https://www.github.com/sharetribe/sharetribe).
@@ -57,7 +60,7 @@ other services that will rely on and integrate to the Harmony API.
   ```
   echo "CREATE DATABASE IF NOT EXISTS harmony_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;" | mysql -u root --password=harmony-root -h 127.0.0.1 --port 13306
   ```
-  
+
   Then, run migrations:
 
   ```
